@@ -1,7 +1,5 @@
 # Reminder - Mobile Programming Project Structure
 
-Cấu trúc repo đã được tách lại để phù hợp với đồ án lập trình di động:
-
 - `frontend/` chứa ứng dụng Flutter
 - `backend/` chứa ASP.NET Core Web API
 - `backend/database/` chứa script SQL Server và tài liệu CSDL
