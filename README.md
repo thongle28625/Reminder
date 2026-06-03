@@ -1,17 +1,75 @@
-# reminder
+# Reminder - Mobile Programming Project Structure
 
-A new Flutter project.
+Cấu trúc repo đã được tách lại để phù hợp với đồ án lập trình di động:
 
-## Getting Started
+- `frontend/` chứa ứng dụng Flutter
+- `backend/` chứa ASP.NET Core Web API
+- `backend/database/` chứa script SQL Server và tài liệu CSDL
 
-This project is a starting point for a Flutter application.
+## Cấu trúc thư mục
 
-A few resources to get you started if this is your first Flutter project:
+```text
+Reminder/
+├─ frontend/
+│  ├─ mobile_app/                # Ứng dụng Flutter
+│  │  ├─ lib/
+│  │  ├─ android/
+│  │  ├─ ios/
+│  │  ├─ web/
+│  │  ├─ test/
+│  │  ├─ pubspec.yaml
+│  │  └─ analysis_options.yaml
+│  └─ README.md
+├─ backend/
+│  ├─ src/
+│  │  └─ Reminder.Api/           # ASP.NET Core Web API
+│  ├─ database/
+│  │  ├─ init.sql                # Script khởi tạo SQL Server
+│  │  └─ README.md
+│  ├─ Reminder.slnx
+│  └─ README.md
+├─ .gsd/
+├─ .gitignore
+└─ README.md
+```
 
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
+## Vai trò từng phần
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+### Frontend - Flutter
+- Xây dựng giao diện mobile
+- Gọi API từ backend
+- Quản lý state, local cache, điều hướng màn hình
+
+### Backend - ASP.NET Core + SQL Server
+- Cung cấp REST API cho app Flutter
+- Xử lý nghiệp vụ
+- Kết nối SQL Server
+- Xác thực, phân quyền, thống kê nếu cần
+
+## Lệnh chạy nhanh
+
+### 1) Chạy Flutter app
+```bash
+cd frontend/mobile_app
+flutter pub get
+flutter run
+```
+
+### 2) Chạy ASP.NET Core API
+```bash
+cd backend/src/Reminder.Api
+dotnet run
+```
+
+API health check:
+- `GET /api/health`
+
+OpenAPI (dev):
+- `/openapi/v1.json`
+
+## Gợi ý mở rộng tiếp theo
+
+1. Thêm Entity Framework Core + SQL Server cho backend
+2. Tạo module `Tasks`, `TaskLists`, `Notifications`
+3. Đồng bộ dữ liệu giữa Flutter và API thay cho lưu local-only
+4. Bổ sung `docs/` nếu cần báo cáo kiến trúc, API, ERD

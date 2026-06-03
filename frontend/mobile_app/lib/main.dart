@@ -5,7 +5,6 @@ import 'providers/task_provider.dart';
 import 'providers/task_list_provider.dart';
 import 'providers/theme_provider.dart';
 import 'services/notification_service.dart';
-import 'screens/home_screen.dart';
 import 'core/theme/app_theme.dart';
 
 Future<void> main() async {
