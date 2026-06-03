@@ -29,9 +29,14 @@ class _MainNavigationState
   void initState() {
     super.initState();
 
-    Future.microtask(() {
-      context.read<TaskProvider>().loadTasks();
-      context.read<TaskListProvider>().loadLists();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+
+      final taskProvider = context.read<TaskProvider>();
+      final taskListProvider = context.read<TaskListProvider>();
+
+      taskProvider.loadTasks();
+      taskListProvider.loadLists();
     });
   }
 

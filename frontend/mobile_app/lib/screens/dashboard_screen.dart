@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../services/pdf_service.dart';
+
 import '../providers/task_provider.dart';
+import '../services/pdf_service.dart';
 import 'task_list_view.dart';
 
 class DashboardScreen extends StatelessWidget {
@@ -10,35 +11,25 @@ class DashboardScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<TaskProvider>();
-    final tasks = provider.tasks;
 
-    int today = tasks.where((e) {
-      final now = DateTime.now();
-
-      return !e.isCompleted &&
-          e.dueDate.day == now.day &&
-          e.dueDate.month == now.month &&
-          e.dueDate.year == now.year;
-    }).length;
-
-    int overdue = tasks.where(
-          (e) =>
-      !e.isCompleted &&
-          e.dueDate.isBefore(DateTime.now()),
-    ).length;
+    final total = provider.totalTasks;
+    final completed = provider.completedTasks;
+    final today = provider.todayTasks.where((task) => !task.isCompleted).length;
+    final overdue = provider.overdueTasks.length;
+    final pending = provider.pendingTasks;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Dashboard"),
+        title: const Text('Dashboard'),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             GridView.count(
               shrinkWrap: true,
-              physics:
-              const NeverScrollableScrollPhysics(),
+              physics: const NeverScrollableScrollPhysics(),
               crossAxisCount: 2,
               crossAxisSpacing: 12,
               mainAxisSpacing: 12,
@@ -46,54 +37,53 @@ class DashboardScreen extends StatelessWidget {
               children: [
                 _buildCard(
                   context,
-                  "Tổng",
-                  tasks.where((e) => !e.isCompleted).length,
-                  Colors.blue.shade50,
+                  title: 'Tổng',
+                  count: total,
+                  color: Colors.blue.shade50,
+                  filter: 'Tổng',
                 ),
                 _buildCard(
                   context,
-                  "Hoàn thành",
-                  0,
-                  Colors.green.shade50,
+                  title: 'Hoàn thành',
+                  count: completed,
+                  color: Colors.green.shade50,
+                  filter: 'Hoàn thành',
                 ),
                 _buildCard(
                   context,
-                  "Hôm nay",
-                  today,
-                  Colors.orange.shade50,
+                  title: 'Hôm nay',
+                  count: today,
+                  color: Colors.orange.shade50,
+                  filter: 'Hôm nay',
                 ),
                 _buildCard(
                   context,
-                  "Quá hạn",
-                  overdue,
-                  Colors.red.shade50,
+                  title: 'Quá hạn',
+                  count: overdue,
+                  color: Colors.red.shade50,
+                  filter: 'Quá hạn',
                 ),
               ],
             ),
-
-            const SizedBox(height: 30),
-
+            const SizedBox(height: 24),
+            Text(
+              'Đã hoàn thành $completed/$total công việc • Còn lại $pending',
+              style: Theme.of(context).textTheme.bodyMedium,
+            ),
+            const SizedBox(height: 12),
             LinearProgressIndicator(
               value: provider.progress,
               minHeight: 10,
-              borderRadius:
-              BorderRadius.circular(10),
+              borderRadius: BorderRadius.circular(10),
             ),
             const SizedBox(height: 20),
-
             SizedBox(
               width: double.infinity,
               child: ElevatedButton.icon(
-                icon: const Icon(
-                  Icons.picture_as_pdf,
-                ),
-                label: const Text(
-                  "Xuất báo cáo PDF",
-                ),
+                icon: const Icon(Icons.picture_as_pdf),
+                label: const Text('Xuất báo cáo PDF'),
                 onPressed: () async {
-                  await PdfService.exportTasks(
-                    provider.tasks,
-                  );
+                  await PdfService.exportTasks(provider.tasks);
                 },
               ),
             ),
@@ -104,11 +94,12 @@ class DashboardScreen extends StatelessWidget {
   }
 
   Widget _buildCard(
-      BuildContext context,
-      String title,
-      int count,
-      Color color,
-      ) {
+    BuildContext context, {
+    required String title,
+    required int count,
+    required Color color,
+    required String filter,
+  }) {
     return InkWell(
       borderRadius: BorderRadius.circular(12),
       onTap: () {
@@ -117,9 +108,7 @@ class DashboardScreen extends StatelessWidget {
           MaterialPageRoute(
             builder: (_) => TaskListView(
               title: title,
-              filter: title == "Tổng"
-                  ? "Tất cả"
-                  : title,
+              filter: filter,
             ),
           ),
         );
@@ -128,14 +117,11 @@ class DashboardScreen extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: color,
-          borderRadius:
-          BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(12),
         ),
         child: Column(
-          crossAxisAlignment:
-          CrossAxisAlignment.start,
-          mainAxisAlignment:
-          MainAxisAlignment.spaceBetween,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
               title,
@@ -144,13 +130,7 @@ class DashboardScreen extends StatelessWidget {
                 fontSize: 16,
               ),
             ),
-            title == "Hoàn thành"
-                ? const Icon(
-              Icons.check_circle,
-              size: 32,
-              color: Colors.green,
-            )
-                : Text(
+            Text(
               count.toString(),
               style: const TextStyle(
                 fontSize: 22,

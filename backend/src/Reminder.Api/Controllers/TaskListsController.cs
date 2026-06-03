@@ -19,7 +19,12 @@ public class TaskListsController : ControllerBase
     [HttpGet]
     public IActionResult GetAll()
     {
-        return Ok(_context.TaskLists.OrderBy(x => x.Id).ToList());
+        var taskLists = _context.TaskLists
+            .OrderBy(x => x.Id)
+            .Select(x => ToTaskListResponse(x))
+            .ToList();
+
+        return Ok(taskLists);
     }
 
     [HttpGet("{id:int}")]
@@ -27,7 +32,34 @@ public class TaskListsController : ControllerBase
     {
         var taskList = _context.TaskLists
             .Include(x => x.Tasks)
-            .FirstOrDefault(x => x.Id == id);
+            .Where(x => x.Id == id)
+            .Select(x => new
+            {
+                id = x.Id,
+                name = x.Name,
+                description = x.Description,
+                createdAt = x.CreatedAt,
+                tasks = x.Tasks
+                    .OrderBy(t => t.IsCompleted)
+                    .ThenBy(t => t.DueDate)
+                    .Select(t => new
+                    {
+                        id = t.Id,
+                        taskListId = t.TaskListId,
+                        listId = t.TaskListId,
+                        listName = x.Name,
+                        title = t.Title,
+                        description = t.Description,
+                        dueDate = t.DueDate,
+                        reminderTime = t.ReminderTime,
+                        priority = t.Priority,
+                        isCompleted = t.IsCompleted,
+                        createdAt = t.CreatedAt,
+                        updatedAt = t.UpdatedAt,
+                    })
+                    .ToList(),
+            })
+            .FirstOrDefault();
 
         if (taskList == null)
         {
@@ -56,7 +88,7 @@ public class TaskListsController : ControllerBase
             _context.TaskLists.Add(taskList);
             _context.SaveChanges();
 
-            return Ok(taskList);
+            return Ok(ToTaskListResponse(taskList));
         }
         catch (Exception ex)
         {
@@ -91,7 +123,7 @@ public class TaskListsController : ControllerBase
             _context.TaskLists.Update(taskList);
             _context.SaveChanges();
 
-            return Ok(taskList);
+            return Ok(ToTaskListResponse(taskList));
         }
         catch (Exception ex)
         {
@@ -128,5 +160,16 @@ public class TaskListsController : ControllerBase
                 error = ex.Message,
             });
         }
+    }
+
+    private static object ToTaskListResponse(TaskList taskList)
+    {
+        return new
+        {
+            id = taskList.Id,
+            name = taskList.Name,
+            description = taskList.Description,
+            createdAt = taskList.CreatedAt,
+        };
     }
 }

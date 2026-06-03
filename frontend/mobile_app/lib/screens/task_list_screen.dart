@@ -18,10 +18,9 @@ class _TaskListsScreenState
   void initState() {
     super.initState();
 
-    Future.microtask(() {
-      context
-          .read<TaskListProvider>()
-          .loadLists();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      context.read<TaskListProvider>().loadLists();
     });
   }
 
@@ -62,10 +61,11 @@ class _TaskListsScreenState
                   return;
                 }
 
-                await context
-                    .read<
-                    TaskListProvider>()
-                    .addList(
+                final provider =
+                    context.read<TaskListProvider>();
+                final navigator = Navigator.of(context);
+
+                await provider.addList(
                   TaskListModel(
                     name: controller
                         .text
@@ -75,9 +75,7 @@ class _TaskListsScreenState
 
                 if (!mounted) return;
 
-                Navigator.pop(
-                  context,
-                );
+                navigator.pop();
               },
               child: const Text(
                 "Lưu",
@@ -117,10 +115,11 @@ class _TaskListsScreenState
             ),
             ElevatedButton(
               onPressed: () async {
-                await context
-                    .read<
-                    TaskListProvider>()
-                    .updateList(
+                final provider =
+                    context.read<TaskListProvider>();
+                final navigator = Navigator.of(context);
+
+                await provider.updateList(
                   list.copyWith(
                     name: controller
                         .text
@@ -130,9 +129,7 @@ class _TaskListsScreenState
 
                 if (!mounted) return;
 
-                Navigator.pop(
-                  context,
-                );
+                navigator.pop();
               },
               child:
               const Text("Lưu"),

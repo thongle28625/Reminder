@@ -1,19 +1,23 @@
 import 'package:flutter/material.dart';
-import 'package:sqflite/sqflite.dart';
 
+import '../core/constants/app_constants.dart';
 import '../models/task_model.dart';
 import '../services/database_helper.dart';
 import '../services/notification_service.dart';
+import '../services/task_api_service.dart';
 
 class TaskProvider extends ChangeNotifier {
-  List<TaskModel> _tasks = [];
-  String currentFilter = "Tất cả"; // Lọc theo Priority cũ
+  TaskProvider({TaskApiService? apiService})
+      : _apiService = apiService ?? TaskApiService();
 
-  // --- THÊM MỚI ĐỂ ĐIỀU HƯỚNG VÀ LỌC ---
+  final TaskApiService _apiService;
+  List<TaskModel> _tasks = [];
+  String currentFilter = 'Tất cả';
+
   int _tabIndex = 0;
   int get tabIndex => _tabIndex;
 
-  String _statusFilter = "Tất cả";
+  String _statusFilter = 'Tất cả';
   String get statusFilter => _statusFilter;
 
   void setStatusFilter(String filter) {
@@ -26,84 +30,68 @@ class TaskProvider extends ChangeNotifier {
     _tabIndex = index;
     notifyListeners();
   }
-  // ------------------------------------
 
   List<TaskModel> get tasks => _tasks;
 
-  // SỬA LẠI GETTER NÀY ĐỂ LỌC ĐÚNG Ý
   List<TaskModel> get filteredTasks {
     List<TaskModel> list = _tasks;
 
-    // 1. Lọc theo trạng thái từ Dashboard
-    if (_statusFilter == "Hoàn thành") {
+    if (_statusFilter == 'Hoàn thành') {
       list = list.where((t) => t.isCompleted).toList();
-    } else if (_statusFilter == "Hôm nay") {
+    } else if (_statusFilter == 'Hôm nay') {
       final now = DateTime.now();
-      list = list.where((t) =>
-      t.dueDate.year == now.year &&
-          t.dueDate.month == now.month &&
-          t.dueDate.day == now.day
-      ).toList();
-    } else if (_statusFilter == "Quá hạn") {
+      list = list.where((t) {
+        return t.dueDate.year == now.year &&
+            t.dueDate.month == now.month &&
+            t.dueDate.day == now.day;
+      }).toList();
+    } else if (_statusFilter == 'Quá hạn') {
       list = list.where((t) => !t.isCompleted && t.dueDate.isBefore(DateTime.now())).toList();
     }
 
-    // 2. Lọc tiếp theo Priority (Cái dropdown "Tất cả" của bạn)
-    if (currentFilter != "Tất cả") {
-      list = list.where((task) => task.priority == currentFilter).toList();
+    if (currentFilter != 'Tất cả') {
+      list = list.where((task) => task.priorityLabel == currentFilter).toList();
     }
+
     return list;
   }
 
   int get totalTasks => _tasks.length;
 
-  int get completedTasks =>
-      _tasks.where((e) => e.isCompleted).length;
+  int get completedTasks => _tasks.where((e) => e.isCompleted).length;
 
-  int get pendingTasks =>
-      _tasks.where((e) => !e.isCompleted).length;
+  int get pendingTasks => _tasks.where((e) => !e.isCompleted).length;
 
   double get progress {
     if (_tasks.isEmpty) return 0;
-
     return completedTasks / _tasks.length;
   }
 
   List<TaskModel> get todayTasks {
     final now = DateTime.now();
-
     return _tasks.where((task) {
       return task.dueDate.year == now.year &&
           task.dueDate.month == now.month &&
           task.dueDate.day == now.day;
     }).toList();
   }
-  List<TaskModel> getTasksByList(
-      int listId,
-      ) {
-    return _tasks.where(
-          (task) => task.listId == listId,
-    ).toList();
+
+  List<TaskModel> getTasksByList(int listId) {
+    return _tasks.where((task) => task.listId == listId).toList();
   }
 
   List<TaskModel> get overdueTasks {
     return _tasks.where((task) {
-      return task.dueDate.isBefore(
-        DateTime.now(),
-      ) &&
-          !task.isCompleted;
+      return task.dueDate.isBefore(DateTime.now()) && !task.isCompleted;
     }).toList();
   }
 
   List<TaskModel> get weekTasks {
     final now = DateTime.now();
-
-    final nextWeek =
-    now.add(const Duration(days: 7));
+    final nextWeek = now.add(const Duration(days: 7));
 
     return _tasks.where((task) {
-      return task.dueDate.isAfter(now) &&
-          task.dueDate.isBefore(nextWeek);
+      return task.dueDate.isAfter(now) && task.dueDate.isBefore(nextWeek);
     }).toList();
   }
 
@@ -112,114 +100,106 @@ class TaskProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-
   Future<void> loadTasks() async {
-    final db = await DatabaseHelper.instance.database;
-
-    final maps = await db.rawQuery('''
-    SELECT
-      tasks.*,
-      task_lists.name AS listName
-    FROM tasks
-    LEFT JOIN task_lists
-      ON tasks.listId = task_lists.id
-    ORDER BY tasks.dueDate ASC
-  ''');
-
-    _tasks = maps
-        .map(
-          (e) => TaskModel.fromMap(e),
-    )
-        .toList();
+    try {
+      final remoteTasks = await _apiService.fetchTasks();
+      _tasks = remoteTasks;
+      await DatabaseHelper.instance.replaceTasks(remoteTasks);
+    } catch (_) {
+      _tasks = await DatabaseHelper.instance.getTasks();
+    }
 
     notifyListeners();
   }
 
-  Future<void> addTask(
-      TaskModel task,
-      ) async {
-    final db = await DatabaseHelper.instance.database;
+  Future<void> addTask(TaskModel task) async {
+    TaskModel storedTask = task;
 
-    final id = await db.insert(
-      'tasks',
-      task.toMap(),
-      conflictAlgorithm:
-      ConflictAlgorithm.replace,
-    );
+    try {
+      storedTask = await _apiService.createTask(task);
+    } catch (_) {
+      storedTask = task.copyWith(
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+      );
+    }
 
-    await NotificationService.instance
-        .scheduleNotification(
-      id: id,
-      title: task.title,
-      body: task.description,
-      scheduleDate: task.dueDate,
-    );
+    await DatabaseHelper.instance.upsertTask(storedTask);
 
-    await loadTasks();
-  }
-
-  Future<void> updateTask(
-      TaskModel task,
-      ) async {
-    final db = await DatabaseHelper.instance.database;
-
-    await db.update(
-      'tasks',
-      task.toMap(),
-      where: 'id = ?',
-      whereArgs: [task.id],
-    );
-
-    await NotificationService.instance
-        .updateNotification(
-      id: task.id!,
-      title: task.title,
-      body: task.description,
-      scheduleDate: task.dueDate,
-    );
+    if (storedTask.id != null) {
+      await NotificationService.instance.scheduleNotification(
+        id: storedTask.id!,
+        title: storedTask.title,
+        body: storedTask.description,
+        scheduleDate: storedTask.reminderTime ?? storedTask.dueDate,
+      );
+    }
 
     await loadTasks();
   }
 
-  Future<void> deleteTask(
-      int id,
-      ) async {
-    final db = await DatabaseHelper.instance.database;
+  Future<void> updateTask(TaskModel task) async {
+    TaskModel storedTask = task;
 
-    await db.delete(
-      'tasks',
-      where: 'id = ?',
-      whereArgs: [id],
-    );
+    try {
+      storedTask = await _apiService.updateTask(task);
+    } catch (_) {
+      storedTask = task.copyWith(updatedAt: DateTime.now());
+    }
 
-    await NotificationService.instance
-        .cancelNotification(id);
+    await DatabaseHelper.instance.upsertTask(storedTask);
+
+    if (storedTask.id != null) {
+      await NotificationService.instance.updateNotification(
+        id: storedTask.id!,
+        title: storedTask.title,
+        body: storedTask.description,
+        scheduleDate: storedTask.reminderTime ?? storedTask.dueDate,
+      );
+    }
 
     await loadTasks();
   }
 
-  Future<void> toggleComplete(
-      TaskModel task,
-      ) async {
+  Future<void> deleteTask(int id) async {
+    try {
+      await _apiService.deleteTask(id);
+    } catch (_) {
+      // Fall back to local delete so the app remains usable offline.
+    }
 
-    task.isCompleted =
-    !task.isCompleted;
+    await DatabaseHelper.instance.removeTask(id);
+    await NotificationService.instance.cancelNotification(id);
+    await loadTasks();
+  }
 
-    await updateTask(task);
+  Future<void> toggleComplete(TaskModel task) async {
+    final toggled = task.copyWith(isCompleted: !task.isCompleted);
+    await updateTask(toggled);
   }
 
   Future<void> deleteAllTasks() async {
-    final db = await DatabaseHelper.instance.database;
+    for (final task in _tasks) {
+      if (task.id != null) {
+        try {
+          await _apiService.deleteTask(task.id!);
+        } catch (_) {
+          // Continue deleting local cache even if remote is unavailable.
+        }
+      }
+    }
 
-    await db.delete('tasks');
-
-    await NotificationService.instance
-        .cancelAllNotifications();
-
+    await DatabaseHelper.instance.deleteAllTasks();
+    await NotificationService.instance.cancelAllNotifications();
     await loadTasks();
   }
 
   Future<void> refresh() async {
     await loadTasks();
   }
+
+  List<String> get availablePriorityFilters => [
+        'Tất cả',
+        ...AppConstants.priorityLabels,
+      ];
 }

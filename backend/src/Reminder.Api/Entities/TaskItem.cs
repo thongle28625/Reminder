@@ -12,11 +12,15 @@ public partial class TaskItem
 
     public DateTime? DueDate { get; set; }
 
+    public DateTime? ReminderTime { get; set; }
+
     public bool IsCompleted { get; set; }
 
     public int Priority { get; set; }
 
     public DateTime CreatedAt { get; set; }
+
+    public DateTime? UpdatedAt { get; set; }
 
     public virtual TaskList? TaskList { get; set; }
 }

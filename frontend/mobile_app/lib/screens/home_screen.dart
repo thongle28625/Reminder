@@ -110,36 +110,30 @@ class _HomeScreenState extends State<HomeScreen> {
           size: 60,
         ),
         onSelected: (value) async {
+          final navigator = Navigator.of(context);
+          final taskProvider = context.read<TaskProvider>();
+          final taskListProvider = context.read<TaskListProvider>();
+
           if (value == "task") {
-            await Navigator.push(
-              context,
+            await navigator.push(
               MaterialPageRoute(
-                builder: (_) =>
-                const AddTaskScreen(),
+                builder: (_) => const AddTaskScreen(),
               ),
             );
 
             if (!mounted) return;
-
-            await context
-                .read<TaskProvider>()
-                .loadTasks();
+            await taskProvider.loadTasks();
           }
 
           if (value == "list") {
-            await Navigator.push(
-              context,
+            await navigator.push(
               MaterialPageRoute(
-                builder: (_) =>
-                const AddListScreen(),
+                builder: (_) => const AddListScreen(),
               ),
             );
 
             if (!mounted) return;
-
-            await context
-                .read<TaskListProvider>()
-                .loadLists();
+            await taskListProvider.loadLists();
           }
         },
         itemBuilder: (context) => [

@@ -44,6 +44,10 @@ Connection string nằm tại:
 DbContext nằm trong:
 - `backend/src/Reminder.Api/Entities/ReminderDbContext.cs`
 
+## Script database
+- File SQL: `backend/database/init.sql`
+- Script tạo database `ReminderDb`, bảng `TaskLists`, `Tasks`, khóa ngoại và dữ liệu mẫu.
+
 ## API mẫu hiện có
 - `GET /api/health`
 - `GET /api/tasklists`
@@ -51,10 +55,16 @@ DbContext nằm trong:
 - `POST /api/tasklists`
 - `PUT /api/tasklists/{id}`
 - `DELETE /api/tasklists/{id}`
+- `GET /api/tasks`
+- `GET /api/tasks/{id}`
+- `GET /api/tasks/by-list/{taskListId}`
+- `POST /api/tasks`
+- `PUT /api/tasks/{id}`
+- `DELETE /api/tasks/{id}`
 
 ## Gợi ý mở rộng tiếp
-Sau `TaskListsController`, bạn có thể làm tiếp:
-- `TasksController`
+Sau `TaskListsController` và `TasksController`, bạn có thể làm tiếp:
 - đăng nhập / người dùng nếu đề tài cần
 - migration EF Core
 - Swagger/OpenAPI test API
+- tích hợp Flutter gọi API thật

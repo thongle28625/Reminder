@@ -60,16 +60,3 @@ flutter run
 cd backend/src/Reminder.Api
 dotnet run
 ```
-
-API health check:
-- `GET /api/health`
-
-OpenAPI (dev):
-- `/openapi/v1.json`
-
-## Gợi ý mở rộng tiếp theo
-
-1. Thêm Entity Framework Core + SQL Server cho backend
-2. Tạo module `Tasks`, `TaskLists`, `Notifications`
-3. Đồng bộ dữ liệu giữa Flutter và API thay cho lưu local-only
-4. Bổ sung `docs/` nếu cần báo cáo kiến trúc, API, ERD

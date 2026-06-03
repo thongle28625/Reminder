@@ -58,6 +58,10 @@ public partial class ReminderDbContext : DbContext
             entity.Property(e => e.CreatedAt)
                 .HasDefaultValueSql("SYSUTCDATETIME()");
 
+            entity.Property(e => e.UpdatedAt);
+
+            entity.Property(e => e.ReminderTime);
+
             entity.HasOne(d => d.TaskList)
                 .WithMany(p => p.Tasks)
                 .HasForeignKey(d => d.TaskListId)

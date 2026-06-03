@@ -21,17 +21,11 @@ class TaskListView extends StatelessWidget {
 
     List<TaskModel> tasks = provider.tasks;
 
-    if (filter == "Tất cả") {
-      tasks = tasks
-          .where((t) => !t.isCompleted)
-          .toList();
-    }
-    else if (filter == "Hoàn thành") {
-      tasks = tasks
-          .where((t) => t.isCompleted)
-          .toList();
-    }
-    else if (filter == "Hôm nay") {
+    if (filter == 'Tổng') {
+      tasks = List<TaskModel>.from(tasks);
+    } else if (filter == 'Hoàn thành') {
+      tasks = tasks.where((t) => t.isCompleted).toList();
+    } else if (filter == 'Hôm nay') {
       final now = DateTime.now();
 
       tasks = tasks.where((t) {
@@ -40,14 +34,12 @@ class TaskListView extends StatelessWidget {
             t.dueDate.month == now.month &&
             t.dueDate.day == now.day;
       }).toList();
-    }
-    else if (filter == "Quá hạn") {
+    } else if (filter == 'Quá hạn') {
       tasks = tasks.where((t) {
-        return !t.isCompleted &&
-            t.dueDate.isBefore(
-              DateTime.now(),
-            );
+        return !t.isCompleted && t.dueDate.isBefore(DateTime.now());
       }).toList();
+    } else if (filter == 'Tất cả') {
+      tasks = tasks.where((t) => !t.isCompleted).toList();
     }
 
     return Scaffold(
@@ -56,26 +48,21 @@ class TaskListView extends StatelessWidget {
       ),
       body: tasks.isEmpty
           ? const Center(
-        child: Text(
-          "Không có lời nhắc",
-        ),
-      )
+              child: Text('Không có lời nhắc'),
+            )
           : ListView.builder(
-        itemCount: tasks.length,
-        itemBuilder: (
-            context,
-            index,
-            ) {
-          final task = tasks[index];
+              itemCount: tasks.length,
+              itemBuilder: (context, index) {
+                final task = tasks[index];
 
-          return TaskCard(
-            task: task,
-            onTap: () async {
-              await provider.toggleComplete(task);
-            },
-          );
-        },
-      ),
+                return TaskCard(
+                  task: task,
+                  onTap: () async {
+                    await provider.toggleComplete(task);
+                  },
+                );
+              },
+            ),
     );
   }
 }

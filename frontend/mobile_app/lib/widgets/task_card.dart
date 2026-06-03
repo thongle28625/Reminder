@@ -17,9 +17,9 @@ class TaskCard extends StatelessWidget {
 
   Color _priorityColor() {
     switch (task.priority) {
-      case 'Cao':
+      case 2:
         return Colors.red;
-      case 'Trung Bình':
+      case 1:
         return Colors.orange;
       default:
         return Colors.green;
@@ -28,33 +28,24 @@ class TaskCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final dateFormat =
-    DateFormat('dd/MM/yyyy HH:mm');
+    final dateFormat = DateFormat('dd/MM/yyyy HH:mm');
 
     return Card(
-      margin: const EdgeInsets.symmetric(
-        horizontal: 12,
-        vertical: 6,
-      ),
+      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       child: InkWell(
-        borderRadius:
-        BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(12),
         onTap: () {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (_) => EditTaskScreen(
-                task: task,
-              ),
+              builder: (_) => EditTaskScreen(task: task),
             ),
           );
         },
         child: Padding(
-          padding:
-          const EdgeInsets.all(12),
+          padding: const EdgeInsets.all(12),
           child: Row(
-            crossAxisAlignment:
-            CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Checkbox(
                 value: task.isCompleted,
@@ -62,94 +53,49 @@ class TaskCard extends StatelessWidget {
                   onTap();
                 },
               ),
-
               Expanded(
                 child: Column(
-                  crossAxisAlignment:
-                  CrossAxisAlignment
-                      .start,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       task.title,
                       style: TextStyle(
                         fontSize: 16,
-                        fontWeight:
-                        FontWeight.bold,
-                        decoration:
-                        task.isCompleted
-                            ? TextDecoration
-                            .lineThrough
-                            : null,
+                        fontWeight: FontWeight.bold,
+                        decoration: task.isCompleted ? TextDecoration.lineThrough : null,
                       ),
                     ),
-
-                    const SizedBox(
-                        height: 5),
-
-                    if (task.description
-                        .isNotEmpty)
+                    const SizedBox(height: 5),
+                    if (task.description.isNotEmpty)
                       Text(
                         task.description,
-                        style:
-                        TextStyle(
-                          decoration:
-                          task.isCompleted
-                              ? TextDecoration
-                              .lineThrough
-                              : null,
+                        style: TextStyle(
+                          decoration: task.isCompleted ? TextDecoration.lineThrough : null,
                         ),
                       ),
-
-                    const SizedBox(
-                        height: 8),
-
+                    const SizedBox(height: 8),
                     Row(
                       children: [
-                        Icon(
-                          Icons
-                              .schedule,
-                          size: 18,
-                          color:
-                          Colors.grey,
-                        ),
-                        const SizedBox(
-                            width: 5),
-                        Text(
-                          dateFormat
-                              .format(
-                            task.dueDate,
-                          ),
-                        ),
+                        const Icon(Icons.schedule, size: 18, color: Colors.grey),
+                        const SizedBox(width: 5),
+                        Text(dateFormat.format(task.reminderTime ?? task.dueDate)),
                       ],
                     ),
-
-                    const SizedBox(
-                        height: 8),
-
+                    const SizedBox(height: 8),
                     Row(
                       children: [
-                        PriorityBadge(
-                          priority:
-                          task.priority,
-                        ),
+                        PriorityBadge(priority: task.priority),
                       ],
                     ),
                   ],
                 ),
               ),
-
               Container(
                 width: 12,
                 height: 70,
-                decoration:
-                BoxDecoration(
-                  color:
-                  _priorityColor(),
-                  borderRadius:
-                  BorderRadius
-                      .circular(
-                    10,
-                  ),
+                decoration: BoxDecoration(
+                  color: _priorityColor(),
+                  borderRadius: BorderRadius.circular(10),
                 ),
               ),
             ],

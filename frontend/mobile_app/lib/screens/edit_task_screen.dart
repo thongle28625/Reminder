@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../core/constants/app_constants.dart';
 import '../models/task_model.dart';
 import '../providers/task_provider.dart';
 import '../providers/task_list_provider.dart';
@@ -14,46 +15,29 @@ class EditTaskScreen extends StatefulWidget {
   });
 
   @override
-  State<EditTaskScreen> createState() =>
-      _EditTaskScreenState();
+  State<EditTaskScreen> createState() => _EditTaskScreenState();
 }
 
-class _EditTaskScreenState
-    extends State<EditTaskScreen> {
+class _EditTaskScreenState extends State<EditTaskScreen> {
   late TextEditingController titleController;
   late TextEditingController descriptionController;
-
   late DateTime selectedDateTime;
-  late String priority;
+  late int priority;
   late int selectedListId;
 
   @override
   void initState() {
     super.initState();
 
-    titleController = TextEditingController(
-      text: widget.task.title,
-    );
-
-    descriptionController =
-        TextEditingController(
-          text: widget.task.description,
-        );
-
-    selectedDateTime =
-        widget.task.dueDate;
-
+    titleController = TextEditingController(text: widget.task.title);
+    descriptionController = TextEditingController(text: widget.task.description);
+    selectedDateTime = widget.task.reminderTime ?? widget.task.dueDate;
     priority = widget.task.priority;
+    selectedListId = widget.task.listId;
 
-    selectedListId =
-        widget.task.listId;
-
-    Future.microtask(() {
+    Future.microtask(() async {
       if (!mounted) return;
-
-      context
-          .read<TaskProvider>()
-          .loadTasks();
+      await context.read<TaskListProvider>().loadLists();
     });
   }
 
@@ -66,15 +50,11 @@ class _EditTaskScreenState
     );
 
     if (date == null) return;
-
     if (!mounted) return;
 
     final time = await showTimePicker(
       context: context,
-      initialTime:
-      TimeOfDay.fromDateTime(
-        selectedDateTime,
-      ),
+      initialTime: TimeOfDay.fromDateTime(selectedDateTime),
     );
 
     if (time == null) return;
@@ -91,215 +71,129 @@ class _EditTaskScreenState
   }
 
   Future<void> updateTask() async {
-    if (titleController.text
-        .trim()
-        .isEmpty) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(
-        const SnackBar(
-          content: Text(
-            "Vui lòng nhập tên công việc",
-          ),
-        ),
+    if (titleController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Vui lòng nhập tên công việc')),
       );
       return;
     }
 
-    widget.task.title =
-        titleController.text.trim();
+    final updated = widget.task.copyWith(
+      title: titleController.text.trim(),
+      description: descriptionController.text.trim(),
+      dueDate: selectedDateTime,
+      reminderTime: selectedDateTime,
+      priority: priority,
+      listId: selectedListId,
+    );
 
-    widget.task.description =
-        descriptionController.text
-            .trim();
-
-    widget.task.dueDate =
-        selectedDateTime;
-
-    widget.task.priority =
-        priority;
-
-    widget.task.listId =
-        selectedListId;
-
-    await context
-        .read<TaskProvider>()
-        .updateTask(widget.task);
+    await context.read<TaskProvider>().updateTask(updated);
 
     if (!mounted) return;
-
     Navigator.pop(context);
   }
 
   Future<void> deleteTask() async {
-    await context
-        .read<TaskProvider>()
-        .deleteTask(widget.task.id!);
+    await context.read<TaskProvider>().deleteTask(widget.task.id!);
 
     if (!mounted) return;
-
     Navigator.pop(context);
   }
 
   @override
   Widget build(BuildContext context) {
-    final listProvider =
-    context.watch<TaskListProvider>();
+    final listProvider = context.watch<TaskListProvider>();
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
-          "Sửa công việc",
-        ),
+        title: const Text('Sửa công việc'),
         actions: [
           IconButton(
-            icon: const Icon(
-              Icons.delete,
-            ),
+            icon: const Icon(Icons.delete),
             onPressed: deleteTask,
           ),
         ],
       ),
       body: SingleChildScrollView(
-        padding:
-        const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(16),
         child: Column(
           children: [
             TextField(
-              controller:
-              titleController,
-              decoration:
-              const InputDecoration(
-                labelText:
-                "Tên công việc",
-                border:
-                OutlineInputBorder(),
+              controller: titleController,
+              decoration: const InputDecoration(
+                labelText: 'Tên công việc',
+                border: OutlineInputBorder(),
               ),
             ),
-
             const SizedBox(height: 15),
-
             TextField(
-              controller:
-              descriptionController,
+              controller: descriptionController,
               maxLines: 3,
-              decoration:
-              const InputDecoration(
-                labelText: "Mô tả",
-                border:
-                OutlineInputBorder(),
+              decoration: const InputDecoration(
+                labelText: 'Mô tả',
+                border: OutlineInputBorder(),
               ),
             ),
-
             const SizedBox(height: 15),
-
-            DropdownButtonFormField<
-                String>(
+            DropdownButtonFormField<int>(
               initialValue: priority,
-              decoration:
-              const InputDecoration(
-                labelText:
-                "Mức ưu tiên",
-                border:
-                OutlineInputBorder(),
+              decoration: const InputDecoration(
+                labelText: 'Mức ưu tiên',
+                border: OutlineInputBorder(),
               ),
-              items: const [
-                DropdownMenuItem(
-                  value: 'Thấp',
-                  child: Text('Thấp'),
+              items: List.generate(
+                AppConstants.priorityLabels.length,
+                (index) => DropdownMenuItem<int>(
+                  value: index,
+                  child: Text(AppConstants.priorityLabels[index]),
                 ),
-                DropdownMenuItem(
-                  value:
-                  'Trung Bình',
-                  child: Text(
-                      'Trung Bình'),
-                ),
-                DropdownMenuItem(
-                  value: 'Cao',
-                  child:
-                  Text('Cao'),
-                ),
-              ],
+              ),
               onChanged: (value) {
                 setState(() {
-                  priority =
-                  value!;
+                  priority = value ?? 0;
                 });
               },
             ),
-
             const SizedBox(height: 15),
-
-            DropdownButtonFormField<
-                int>(
-              initialValue:
-              selectedListId,
-              decoration:
-              const InputDecoration(
-                labelText:
-                "Danh mục",
-                border:
-                OutlineInputBorder(),
+            DropdownButtonFormField<int>(
+              initialValue: selectedListId,
+              decoration: const InputDecoration(
+                labelText: 'Danh mục',
+                border: OutlineInputBorder(),
               ),
-              items: listProvider
-                  .lists
+              items: listProvider.lists
                   .map(
-                    (list) =>
-                    DropdownMenuItem<
-                        int>(
-                      value:
-                      list.id,
-                      child: Text(
-                        list.name,
-                      ),
+                    (list) => DropdownMenuItem<int>(
+                      value: list.id,
+                      child: Text(list.name),
                     ),
-              )
+                  )
                   .toList(),
               onChanged: (value) {
                 setState(() {
-                  selectedListId =
-                  value!;
+                  selectedListId = value ?? selectedListId;
                 });
               },
             ),
-
             const SizedBox(height: 15),
-
             Card(
               child: ListTile(
-                leading: const Icon(
-                  Icons.schedule,
-                ),
-                title: const Text(
-                  "Thời gian nhắc",
-                ),
-                subtitle: Text(
-                  selectedDateTime
-                      .toString(),
-                ),
-                trailing:
-                IconButton(
-                  icon: const Icon(
-                    Icons.edit,
-                  ),
-                  onPressed:
-                  pickDateTime,
+                leading: const Icon(Icons.schedule),
+                title: const Text('Thời gian nhắc'),
+                subtitle: Text(selectedDateTime.toString()),
+                trailing: IconButton(
+                  icon: const Icon(Icons.edit),
+                  onPressed: pickDateTime,
                 ),
               ),
             ),
-
             const SizedBox(height: 25),
-
             SizedBox(
-              width:
-              double.infinity,
+              width: double.infinity,
               height: 50,
-              child:
-              FilledButton(
-                onPressed:
-                updateTask,
-                child: const Text(
-                  "Cập nhật",
-                ),
+              child: FilledButton(
+                onPressed: updateTask,
+                child: const Text('Cập nhật'),
               ),
             ),
           ],

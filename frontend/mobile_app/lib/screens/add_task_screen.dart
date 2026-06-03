@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../core/constants/app_constants.dart';
 import '../models/task_model.dart';
 import '../providers/task_provider.dart';
 import '../providers/task_list_provider.dart';
@@ -9,25 +10,15 @@ class AddTaskScreen extends StatefulWidget {
   const AddTaskScreen({super.key});
 
   @override
-  State<AddTaskScreen> createState() =>
-      _AddTaskScreenState();
+  State<AddTaskScreen> createState() => _AddTaskScreenState();
 }
 
-class _AddTaskScreenState
-    extends State<AddTaskScreen> {
-  final titleController =
-  TextEditingController();
+class _AddTaskScreenState extends State<AddTaskScreen> {
+  final titleController = TextEditingController();
+  final descriptionController = TextEditingController();
 
-  final descriptionController =
-  TextEditingController();
-
-  DateTime selectedDateTime =
-  DateTime.now().add(
-    const Duration(minutes: 1),
-  );
-
-  String priority = 'Thấp';
-
+  DateTime selectedDateTime = DateTime.now().add(const Duration(minutes: 1));
+  int priority = 0;
   int? selectedListId;
 
   @override
@@ -37,256 +28,163 @@ class _AddTaskScreenState
     Future.microtask(() async {
       if (!mounted) return;
 
-      final provider =
-      context.read<TaskListProvider>();
-
+      final provider = context.read<TaskListProvider>();
       await provider.loadLists();
 
       if (provider.lists.isNotEmpty) {
         setState(() {
-          selectedListId =
-              provider.lists.first.id;
+          selectedListId = provider.lists.first.id;
         });
       }
     });
   }
 
   Future<void> pickDateTime() async {
-    final date =
-    await showDatePicker(
+    final date = await showDatePicker(
       context: context,
-      initialDate:
-      selectedDateTime,
+      initialDate: selectedDateTime,
       firstDate: DateTime.now(),
       lastDate: DateTime(2100),
     );
 
     if (date == null) return;
-
     if (!mounted) return;
 
-    final time =
-    await showTimePicker(
+    final time = await showTimePicker(
       context: context,
-      initialTime:
-      TimeOfDay.fromDateTime(
-        selectedDateTime,
-      ),
+      initialTime: TimeOfDay.fromDateTime(selectedDateTime),
     );
 
     if (time == null) return;
 
     setState(() {
-      selectedDateTime =
-          DateTime(
-            date.year,
-            date.month,
-            date.day,
-            time.hour,
-            time.minute,
-          );
+      selectedDateTime = DateTime(
+        date.year,
+        date.month,
+        date.day,
+        time.hour,
+        time.minute,
+      );
     });
   }
 
   Future<void> saveTask() async {
-    if (titleController.text
-        .trim()
-        .isEmpty) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(
-        const SnackBar(
-          content: Text(
-            "Vui lòng nhập tên công việc",
-          ),
-        ),
+    if (titleController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Vui lòng nhập tên công việc')),
       );
       return;
     }
 
     if (selectedListId == null) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(
-        const SnackBar(
-          content: Text(
-            "Vui lòng chọn danh mục",
-          ),
-        ),
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Vui lòng chọn danh mục')),
       );
       return;
     }
 
     final task = TaskModel(
-      title:
-      titleController.text.trim(),
-      description:
-      descriptionController.text
-          .trim(),
+      title: titleController.text.trim(),
+      description: descriptionController.text.trim(),
       dueDate: selectedDateTime,
+      reminderTime: selectedDateTime,
       priority: priority,
       listId: selectedListId!,
       isCompleted: false,
     );
 
-    await context
-        .read<TaskProvider>()
-        .addTask(task);
+    await context.read<TaskProvider>().addTask(task);
 
     if (!mounted) return;
-
     Navigator.pop(context);
   }
 
   @override
   Widget build(BuildContext context) {
-    final listProvider =
-    context.watch<TaskListProvider>();
+    final listProvider = context.watch<TaskListProvider>();
 
     return Scaffold(
-      appBar: AppBar(
-        title:
-        const Text("Thêm công việc"),
-      ),
+      appBar: AppBar(title: const Text('Thêm công việc')),
       body: SingleChildScrollView(
-        padding:
-        const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(16),
         child: Column(
           children: [
             TextField(
-              controller:
-              titleController,
-              decoration:
-              const InputDecoration(
-                labelText:
-                "Tên công việc",
-                border:
-                OutlineInputBorder(),
+              controller: titleController,
+              decoration: const InputDecoration(
+                labelText: 'Tên công việc',
+                border: OutlineInputBorder(),
               ),
             ),
-
             const SizedBox(height: 15),
-
             TextField(
-              controller:
-              descriptionController,
+              controller: descriptionController,
               maxLines: 3,
-              decoration:
-              const InputDecoration(
-                labelText: "Mô tả",
-                border:
-                OutlineInputBorder(),
+              decoration: const InputDecoration(
+                labelText: 'Mô tả',
+                border: OutlineInputBorder(),
               ),
             ),
-
             const SizedBox(height: 15),
-
-            DropdownButtonFormField<
-                String>(
+            DropdownButtonFormField<int>(
               initialValue: priority,
-              decoration:
-              const InputDecoration(
-                labelText:
-                "Mức ưu tiên",
-                border:
-                OutlineInputBorder(),
+              decoration: const InputDecoration(
+                labelText: 'Mức ưu tiên',
+                border: OutlineInputBorder(),
               ),
-              items: const [
-                DropdownMenuItem(
-                  value: 'Thấp',
-                  child: Text(
-                      'Thấp'),
+              items: List.generate(
+                AppConstants.priorityLabels.length,
+                (index) => DropdownMenuItem<int>(
+                  value: index,
+                  child: Text(AppConstants.priorityLabels[index]),
                 ),
-                DropdownMenuItem(
-                  value:
-                  'Trung Bình',
-                  child: Text(
-                      'Trung Bình'),
-                ),
-                DropdownMenuItem(
-                  value: 'Cao',
-                  child:
-                  Text('Cao'),
-                ),
-              ],
+              ),
               onChanged: (value) {
                 setState(() {
-                  priority =
-                  value!;
+                  priority = value ?? 0;
                 });
               },
             ),
-
             const SizedBox(height: 15),
-
             DropdownButtonFormField<int>(
               initialValue: selectedListId,
-              decoration:
-              const InputDecoration(
-                labelText:
-                "Danh mục",
-                border:
-                OutlineInputBorder(),
+              decoration: const InputDecoration(
+                labelText: 'Danh mục',
+                border: OutlineInputBorder(),
               ),
-              items: listProvider
-                  .lists
+              items: listProvider.lists
                   .map(
-                    (list) =>
-                    DropdownMenuItem<
-                        int>(
-                      value:
-                      list.id,
-                      child: Text(
-                        list.name,
-                      ),
+                    (list) => DropdownMenuItem<int>(
+                      value: list.id,
+                      child: Text(list.name),
                     ),
-              )
+                  )
                   .toList(),
               onChanged: (value) {
                 setState(() {
-                  selectedListId =
-                      value;
+                  selectedListId = value;
                 });
               },
             ),
-
             const SizedBox(height: 15),
-
             Card(
               child: ListTile(
-                leading: const Icon(
-                  Icons
-                      .notifications_active,
-                ),
-                title: const Text(
-                  "Thời gian nhắc",
-                ),
-                subtitle: Text(
-                  selectedDateTime
-                      .toString(),
-                ),
-                trailing:
-                IconButton(
-                  icon: const Icon(
-                    Icons.edit,
-                  ),
-                  onPressed:
-                  pickDateTime,
+                leading: const Icon(Icons.notifications_active),
+                title: const Text('Thời gian nhắc'),
+                subtitle: Text(selectedDateTime.toString()),
+                trailing: IconButton(
+                  icon: const Icon(Icons.edit),
+                  onPressed: pickDateTime,
                 ),
               ),
             ),
-
             const SizedBox(height: 25),
-
             SizedBox(
-              width:
-              double.infinity,
+              width: double.infinity,
               height: 50,
-              child:
-              FilledButton(
-                onPressed:
-                saveTask,
-                child: const Text(
-                  "Lưu công việc",
-                ),
+              child: FilledButton(
+                onPressed: saveTask,
+                child: const Text('Lưu công việc'),
               ),
             ),
           ],

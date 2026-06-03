@@ -25,7 +25,7 @@ class PdfService {
 
             pw.SizedBox(height: 20),
 
-            pw.Table.fromTextArray(
+            pw.TableHelper.fromTextArray(
               headers: const [
                 'Tên',
                 'Ưu tiên',
@@ -35,7 +35,7 @@ class PdfService {
               data: tasks.map((task) {
                 return [
                   task.title,
-                  task.priority,
+                  task.priorityLabel,
                   DateFormat(
                     'dd/MM/yyyy HH:mm',
                   ).format(task.dueDate),
