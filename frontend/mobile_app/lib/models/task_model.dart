@@ -7,6 +7,9 @@ class TaskModel {
   bool isCompleted;
   int listId;
 
+  // THÊM
+  String? listName;
+
   TaskModel({
     this.id,
     required this.title,
@@ -15,6 +18,7 @@ class TaskModel {
     required this.priority,
     this.isCompleted = false,
     required this.listId,
+    this.listName,
   });
 
   Map<String, dynamic> toMap() {
@@ -35,16 +39,16 @@ class TaskModel {
     return TaskModel(
       id: map['id'],
       title: map['title'] ?? '',
-      description:
-      map['description'] ?? '',
+      description: map['description'] ?? '',
       dueDate: DateTime.parse(
         map['dueDate'],
       ),
-      priority:
-      map['priority'] ?? 'Thấp',
-      isCompleted:
-      map['isCompleted'] == 1,
+      priority: map['priority'] ?? 'Thấp',
+      isCompleted: map['isCompleted'] == 1,
       listId: map['listId'] ?? 1,
+
+      // THÊM
+      listName: map['listName'],
     );
   }
 
@@ -56,20 +60,17 @@ class TaskModel {
     String? priority,
     bool? isCompleted,
     int? listId,
+    String? listName,
   }) {
     return TaskModel(
       id: id ?? this.id,
       title: title ?? this.title,
-      description:
-      description ?? this.description,
-      dueDate:
-      dueDate ?? this.dueDate,
-      priority:
-      priority ?? this.priority,
-      isCompleted:
-      isCompleted ?? this.isCompleted,
-      listId:
-      listId ?? this.listId,
+      description: description ?? this.description,
+      dueDate: dueDate ?? this.dueDate,
+      priority: priority ?? this.priority,
+      isCompleted: isCompleted ?? this.isCompleted,
+      listId: listId ?? this.listId,
+      listName: listName ?? this.listName,
     );
   }
 }
