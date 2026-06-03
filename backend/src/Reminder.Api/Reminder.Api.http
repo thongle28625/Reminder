@@ -1,0 +1,44 @@
+@Reminder.Api_HostAddress = http://localhost:5253
+
+### Health check
+GET {{Reminder.Api_HostAddress}}/api/health
+Accept: application/json
+
+### Get all task lists
+GET {{Reminder.Api_HostAddress}}/api/tasklists
+Accept: application/json
+
+### Get one task list
+GET {{Reminder.Api_HostAddress}}/api/tasklists/1
+Accept: application/json
+
+### Create task list
+POST {{Reminder.Api_HostAddress}}/api/tasklists
+Content-Type: application/json
+
+{
+  "name": "Việc nhóm",
+  "description": "Danh sách công việc cho nhóm đồ án"
+}
+
+### Get all tasks
+GET {{Reminder.Api_HostAddress}}/api/tasks
+Accept: application/json
+
+### Get tasks by task list
+GET {{Reminder.Api_HostAddress}}/api/tasks/by-list/1
+Accept: application/json
+
+### Create task
+POST {{Reminder.Api_HostAddress}}/api/tasks
+Content-Type: application/json
+
+{
+  "taskListId": 1,
+  "title": "Làm API ASP.NET Core",
+  "description": "Viết controller và kết nối SQL Server",
+  "dueDate": "2026-06-10T09:00:00",
+  "reminderTime": "2026-06-10T08:00:00",
+  "priority": 2,
+  "isCompleted": false
+}
