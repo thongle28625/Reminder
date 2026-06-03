@@ -37,18 +37,15 @@ class _AddTaskScreenState
     Future.microtask(() async {
       if (!mounted) return;
 
-      context
-          .read<TaskListProvider>()
-          .loadLists();
+      final provider =
+      context.read<TaskListProvider>();
 
-      final lists = context
-          .read<TaskListProvider>()
-          .lists;
+      await provider.loadLists();
 
-      if (lists.isNotEmpty) {
+      if (provider.lists.isNotEmpty) {
         setState(() {
           selectedListId =
-              lists.first.id;
+              provider.lists.first.id;
         });
       }
     });

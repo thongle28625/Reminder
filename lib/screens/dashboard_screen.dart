@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-
+import '../services/pdf_service.dart';
 import '../providers/task_provider.dart';
 import 'task_list_view.dart';
 
@@ -78,6 +78,24 @@ class DashboardScreen extends StatelessWidget {
               minHeight: 10,
               borderRadius:
               BorderRadius.circular(10),
+            ),
+            const SizedBox(height: 20),
+
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                icon: const Icon(
+                  Icons.picture_as_pdf,
+                ),
+                label: const Text(
+                  "Xuất báo cáo PDF",
+                ),
+                onPressed: () async {
+                  await PdfService.exportTasks(
+                    provider.tasks,
+                  );
+                },
+              ),
             ),
           ],
         ),

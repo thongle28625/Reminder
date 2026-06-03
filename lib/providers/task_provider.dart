@@ -78,6 +78,13 @@ class TaskProvider extends ChangeNotifier {
           task.dueDate.day == now.day;
     }).toList();
   }
+  List<TaskModel> getTasksByList(
+      int listId,
+      ) {
+    return _tasks.where(
+          (task) => task.listId == listId,
+    ).toList();
+  }
 
   List<TaskModel> get overdueTasks {
     return _tasks.where((task) {
@@ -109,10 +116,15 @@ class TaskProvider extends ChangeNotifier {
   Future<void> loadTasks() async {
     final db = await DatabaseHelper.instance.database;
 
-    final maps = await db.query(
-      'tasks',
-      orderBy: 'dueDate ASC',
-    );
+    final maps = await db.rawQuery('''
+    SELECT
+      tasks.*,
+      task_lists.name AS listName
+    FROM tasks
+    LEFT JOIN task_lists
+      ON tasks.listId = task_lists.id
+    ORDER BY tasks.dueDate ASC
+  ''');
 
     _tasks = maps
         .map(
