@@ -44,6 +44,9 @@ migrate_working_dir/
 # Local agent shell artifacts
 .bg-shell/
 
+# Local artifacts
+@.artifacts/
+
 # Symbolication related
 app.*.symbols
 

@@ -2,9 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../core/constants/app_constants.dart';
+import '../core/utils/error_utils.dart';
 import '../models/task_model.dart';
-import '../providers/task_provider.dart';
 import '../providers/task_list_provider.dart';
+import '../providers/task_provider.dart';
 
 class AddTaskScreen extends StatefulWidget {
   const AddTaskScreen({super.key});
@@ -20,6 +21,8 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
   DateTime selectedDateTime = DateTime.now().add(const Duration(minutes: 1));
   int priority = 0;
   int? selectedListId;
+  bool _isSaving = false;
+  bool _isLoadingLists = false;
 
   @override
   void initState() {
@@ -28,8 +31,25 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
     Future.microtask(() async {
       if (!mounted) return;
 
+      setState(() {
+        _isLoadingLists = true;
+      });
+
       final provider = context.read<TaskListProvider>();
-      await provider.loadLists();
+
+      try {
+        await provider.loadLists();
+      } catch (error) {
+        if (!mounted) return;
+        showErrorSnackBar(context, error);
+        return;
+      } finally {
+        if (mounted) {
+          setState(() {
+            _isLoadingLists = false;
+          });
+        }
+      }
 
       if (provider.lists.isNotEmpty) {
         setState(() {
@@ -40,6 +60,8 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
   }
 
   Future<void> pickDateTime() async {
+    if (_isSaving) return;
+
     final date = await showDatePicker(
       context: context,
       initialDate: selectedDateTime,
@@ -69,6 +91,8 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
   }
 
   Future<void> saveTask() async {
+    if (_isSaving) return;
+
     if (titleController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Vui lòng nhập tên công việc')),
@@ -93,7 +117,20 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
       isCompleted: false,
     );
 
-    await context.read<TaskProvider>().addTask(task);
+    setState(() {
+      _isSaving = true;
+    });
+
+    try {
+      await context.read<TaskProvider>().addTask(task);
+    } catch (error) {
+      if (!mounted) return;
+      showErrorSnackBar(context, error);
+      setState(() {
+        _isSaving = false;
+      });
+      return;
+    }
 
     if (!mounted) return;
     Navigator.pop(context);
@@ -111,6 +148,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
           children: [
             TextField(
               controller: titleController,
+              enabled: !_isSaving,
               decoration: const InputDecoration(
                 labelText: 'Tên công việc',
                 border: OutlineInputBorder(),
@@ -119,6 +157,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
             const SizedBox(height: 15),
             TextField(
               controller: descriptionController,
+              enabled: !_isSaving,
               maxLines: 3,
               decoration: const InputDecoration(
                 labelText: 'Mô tả',
@@ -139,18 +178,30 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                   child: Text(AppConstants.priorityLabels[index]),
                 ),
               ),
-              onChanged: (value) {
-                setState(() {
-                  priority = value ?? 0;
-                });
-              },
+              onChanged: _isSaving
+                  ? null
+                  : (value) {
+                      setState(() {
+                        priority = value ?? 0;
+                      });
+                    },
             ),
             const SizedBox(height: 15),
             DropdownButtonFormField<int>(
               initialValue: selectedListId,
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 labelText: 'Danh mục',
-                border: OutlineInputBorder(),
+                border: const OutlineInputBorder(),
+                suffixIcon: _isLoadingLists
+                    ? const Padding(
+                        padding: EdgeInsets.all(12),
+                        child: SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        ),
+                      )
+                    : null,
               ),
               items: listProvider.lists
                   .map(
@@ -160,11 +211,13 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                     ),
                   )
                   .toList(),
-              onChanged: (value) {
-                setState(() {
-                  selectedListId = value;
-                });
-              },
+              onChanged: _isSaving || _isLoadingLists
+                  ? null
+                  : (value) {
+                      setState(() {
+                        selectedListId = value;
+                      });
+                    },
             ),
             const SizedBox(height: 15),
             Card(
@@ -174,7 +227,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                 subtitle: Text(selectedDateTime.toString()),
                 trailing: IconButton(
                   icon: const Icon(Icons.edit),
-                  onPressed: pickDateTime,
+                  onPressed: _isSaving ? null : pickDateTime,
                 ),
               ),
             ),
@@ -183,8 +236,14 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
               width: double.infinity,
               height: 50,
               child: FilledButton(
-                onPressed: saveTask,
-                child: const Text('Lưu công việc'),
+                onPressed: _isSaving ? null : saveTask,
+                child: _isSaving
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Text('Lưu công việc'),
               ),
             ),
           ],

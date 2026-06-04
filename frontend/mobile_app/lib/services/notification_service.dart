@@ -1,20 +1,21 @@
+import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:flutter_timezone/flutter_timezone.dart';
 
 import 'package:timezone/data/latest.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
 
 class NotificationService {
   static final NotificationService instance =
-  NotificationService._internal();
+      NotificationService._internal();
 
   NotificationService._internal();
 
   final FlutterLocalNotificationsPlugin notifications =
-  FlutterLocalNotificationsPlugin();
+      FlutterLocalNotificationsPlugin();
 
-  static const AndroidNotificationDetails
-  _androidDetails =
-  AndroidNotificationDetails(
+  static const AndroidNotificationDetails _androidDetails =
+      AndroidNotificationDetails(
     'task_channel',
     'Task Reminder',
     channelDescription: 'Nhắc nhở công việc',
@@ -22,22 +23,22 @@ class NotificationService {
     priority: Priority.high,
   );
 
-  static const NotificationDetails
-  _notificationDetails =
-  NotificationDetails(
+  static const NotificationDetails _notificationDetails =
+      NotificationDetails(
     android: _androidDetails,
   );
 
   Future<void> init() async {
     tz.initializeTimeZones();
 
-    const android =
-    AndroidInitializationSettings(
+    final currentTimeZone = await FlutterTimezone.getLocalTimezone();
+    tz.setLocalLocation(tz.getLocation(currentTimeZone.identifier));
+
+    const android = AndroidInitializationSettings(
       '@mipmap/ic_launcher',
     );
 
-    const settings =
-    InitializationSettings(
+    const settings = InitializationSettings(
       android: android,
     );
 
@@ -46,24 +47,11 @@ class NotificationService {
     );
 
     final androidPlugin =
-    notifications.resolvePlatformSpecificImplementation<
-        AndroidFlutterLocalNotificationsPlugin>();
+        notifications.resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin>();
 
-    await androidPlugin
-        ?.requestNotificationsPermission();
-  }
-
-  Future<void> showNotification({
-    required int id,
-    required String title,
-    required String body,
-  }) async {
-    await notifications.show(
-      id,
-      title,
-      body,
-      _notificationDetails,
-    );
+    await androidPlugin?.requestNotificationsPermission();
+    await androidPlugin?.requestExactAlarmsPermission();
   }
 
   Future<void> scheduleNotification({
@@ -78,30 +66,42 @@ class NotificationService {
       return;
     }
 
-    await notifications.zonedSchedule(
-      id,
-      title,
-      body,
-      tz.TZDateTime.from(
-        scheduleDate,
-        tz.local,
-      ),
-      _notificationDetails,
-      androidScheduleMode:
-      AndroidScheduleMode.exactAllowWhileIdle,
-      uiLocalNotificationDateInterpretation:
-      UILocalNotificationDateInterpretation
-          .absoluteTime,
+    final scheduledAt = tz.TZDateTime.from(
+      scheduleDate,
+      tz.local,
     );
+
+    try {
+      await notifications.zonedSchedule(
+        id,
+        title,
+        body,
+        scheduledAt,
+        _notificationDetails,
+        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+        uiLocalNotificationDateInterpretation:
+            UILocalNotificationDateInterpretation.absoluteTime,
+      );
+    } on PlatformException catch (error) {
+      if (error.message?.contains('exact alarm') != true) {
+        rethrow;
+      }
+
+      await notifications.zonedSchedule(
+        id,
+        title,
+        body,
+        scheduledAt,
+        _notificationDetails,
+        androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+        uiLocalNotificationDateInterpretation:
+            UILocalNotificationDateInterpretation.absoluteTime,
+      );
+    }
   }
 
-  Future<void> cancelNotification(
-      int id) async {
+  Future<void> cancelNotification(int id) async {
     await notifications.cancel(id);
-  }
-
-  Future<void> cancelAllNotifications() async {
-    await notifications.cancelAll();
   }
 
   Future<void> updateNotification({

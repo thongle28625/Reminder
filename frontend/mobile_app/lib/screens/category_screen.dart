@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'category_task_screen.dart';
+
+import '../core/utils/error_utils.dart';
 import '../providers/task_list_provider.dart';
 import '../providers/task_provider.dart';
 import 'add_list_screen.dart';
+import 'category_task_screen.dart';
 import 'edit_list_screen.dart';
 
 class CategoryScreen extends StatelessWidget {
@@ -11,53 +13,26 @@ class CategoryScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final listProvider =
-    context.watch<TaskListProvider>();
-
-    final taskProvider =
-    context.watch<TaskProvider>();
+    final listProvider = context.watch<TaskListProvider>();
+    final taskProvider = context.watch<TaskProvider>();
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
-          "Quản lý danh mục",
-        ),
+        title: const Text('Quản lý danh mục'),
       ),
-
       body: ListView.builder(
-        itemCount:
-        listProvider.lists.length,
+        itemCount: listProvider.lists.length,
         itemBuilder: (context, index) {
-          final list =
-          listProvider.lists[index];
+          final list = listProvider.lists[index];
 
-          final count = taskProvider.tasks
-              .where(
-                (task) =>
-            task.listId ==
-                list.id,
-          )
-              .length;
+          final count = taskProvider.tasks.where((task) => task.listId == list.id).length;
 
           return Card(
-            margin:
-            const EdgeInsets.symmetric(
-              horizontal: 12,
-              vertical: 6,
-            ),
+            margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             child: ListTile(
-              leading: const Icon(
-                Icons.folder,
-              ),
-
-              title: Text(
-                list.name,
-              ),
-
-              subtitle: Text(
-                "$count công việc",
-              ),
-
+              leading: const Icon(Icons.folder),
+              title: Text(list.name),
+              subtitle: Text('$count công việc'),
               onTap: () {
                 Navigator.push(
                   context,
@@ -69,97 +44,71 @@ class CategoryScreen extends StatelessWidget {
                   ),
                 );
               },
-
               trailing: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   IconButton(
-                    icon: const Icon(
-                      Icons.edit,
-                    ),
+                    icon: const Icon(Icons.edit),
                     onPressed: () {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (_) => EditListScreen(
-                            list: list,
-                          ),
+                          builder: (_) => EditListScreen(list: list),
                         ),
                       );
                     },
                   ),
-
                   IconButton(
-                    icon: const Icon(
-                      Icons.delete,
-                      color: Colors.red,
-                    ),
+                    icon: const Icon(Icons.delete, color: Colors.red),
                     onPressed: () async {
-                      final confirm =
-                      await showDialog<bool>(
+                      final confirm = await showDialog<bool>(
                         context: context,
                         builder: (_) => AlertDialog(
-                          title: const Text(
-                            "Xóa danh mục",
-                          ),
-                          content: Text(
-                            "Bạn có chắc muốn xóa '${list.name}' ?",
-                          ),
+                          title: const Text('Xóa danh mục'),
+                          content: Text("Bạn có chắc muốn xóa '${list.name}' ?"),
                           actions: [
                             TextButton(
                               onPressed: () {
-                                Navigator.pop(
-                                  context,
-                                  false,
-                                );
+                                Navigator.pop(context, false);
                               },
-                              child: const Text(
-                                "Hủy",
-                              ),
+                              child: const Text('Hủy'),
                             ),
                             FilledButton(
                               onPressed: () {
-                                Navigator.pop(
-                                  context,
-                                  true,
-                                );
+                                Navigator.pop(context, true);
                               },
-                              child: const Text(
-                                "Xóa",
-                              ),
+                              child: const Text('Xóa'),
                             ),
                           ],
                         ),
                       );
 
                       if (confirm == true) {
-                        await listProvider.deleteList(
-                          list.id!,
-                        );
+                        try {
+                          await listProvider.deleteList(list.id!);
+                        } catch (error) {
+                          if (!context.mounted) return;
+                          showErrorSnackBar(context, error);
+                        }
                       }
                     },
                   ),
                 ],
               ),
-            )
+            ),
           );
         },
       ),
-
-      floatingActionButton:
-      FloatingActionButton(
+      floatingActionButton: FloatingActionButton(
         onPressed: () {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (_) =>
-              const AddListScreen(),
+              builder: (_) => const AddListScreen(),
             ),
           );
         },
-        child: const Icon(
-          Icons.add,
-        ),
+        child: const Icon(Icons.add),
       ),
     );
   }

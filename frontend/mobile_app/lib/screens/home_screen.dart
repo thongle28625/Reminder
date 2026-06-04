@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'add_list_screen.dart';
+
+import '../core/utils/error_utils.dart';
 import '../models/task_list_model.dart';
 import '../providers/task_list_provider.dart';
 import '../providers/task_provider.dart';
 import '../widgets/task_card.dart';
+import 'add_list_screen.dart';
 import 'add_task_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -15,10 +17,28 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  @override
-  void initState() {
-    super.initState();
+  Future<bool> _deleteTask(BuildContext context, TaskProvider provider, int id) async {
+    if (provider.isTaskBusy(id)) return false;
 
+    try {
+      await provider.deleteTask(id);
+      return true;
+    } catch (error) {
+      if (!context.mounted) return false;
+      showErrorSnackBar(context, error);
+      return false;
+    }
+  }
+
+  Future<void> _toggleTask(BuildContext context, TaskProvider provider, dynamic task) async {
+    if (provider.isTaskBusy(task.id)) return;
+
+    try {
+      await provider.toggleComplete(task);
+    } catch (error) {
+      if (!context.mounted) return;
+      showErrorSnackBar(context, error);
+    }
   }
 
   @override
@@ -33,78 +53,63 @@ class _HomeScreenState extends State<HomeScreen> {
       body: Column(
         children: [
           _buildFilter(taskProvider),
-
           Expanded(
             child: taskProvider.filteredTasks.isEmpty
                 ? const Center(
-              child: Text(
-                "Chưa có công việc",
-              ),
-            )
+                    child: Text('Chưa có công việc'),
+                  )
                 : ListView.builder(
-              itemCount: listProvider.lists.length,
-              itemBuilder: (context, listIndex) {
-                final TaskListModel list =
-                listProvider.lists[listIndex];
+                    itemCount: listProvider.lists.length,
+                    itemBuilder: (context, listIndex) {
+                      final TaskListModel list = listProvider.lists[listIndex];
 
-                final tasksInList = taskProvider.filteredTasks
-                    .where(
-                      (task) => task.listId == list.id,
-                )
-                    .toList();
+                      final tasksInList = taskProvider.filteredTasks
+                          .where((task) => task.listId == list.id)
+                          .toList();
 
-                if (tasksInList.isEmpty) {
-                  return const SizedBox.shrink();
-                }
+                      if (tasksInList.isEmpty) {
+                        return const SizedBox.shrink();
+                      }
 
-                return Card(
-                  margin: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 8,
-                  ),
-                  child: ExpansionTile(
-                    initiallyExpanded: true,
-                    title: Text(
-                      "${list.name} (${tasksInList.length})",
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                      ),
-                    ),
-                    children: tasksInList.map((task) {
-                      return Dismissible(
-                        key: Key(task.id.toString()),
-                        background: Container(
-                          color: Colors.red,
-                          alignment: Alignment.centerRight,
-                          padding:
-                          const EdgeInsets.only(right: 20),
-                          child: const Icon(
-                            Icons.delete,
-                            color: Colors.white,
+                      return Card(
+                        margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        child: ExpansionTile(
+                          initiallyExpanded: true,
+                          title: Text(
+                            '${list.name} (${tasksInList.length})',
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
                           ),
-                        ),
-                        onDismissed: (_) {
-                          taskProvider.deleteTask(task.id!);
-                        },
-                        child: TaskCard(
-                          task: task,
-                          onTap: () {
-                            taskProvider.toggleComplete(task);
-                          },
+                          children: tasksInList.map((task) {
+                            final isBusy = taskProvider.isTaskBusy(task.id);
+
+                            return Dismissible(
+                              key: Key(task.id.toString()),
+                              direction: isBusy ? DismissDirection.none : DismissDirection.endToStart,
+                              background: Container(
+                                color: Colors.red,
+                                alignment: Alignment.centerRight,
+                                padding: const EdgeInsets.only(right: 20),
+                                child: const Icon(Icons.delete, color: Colors.white),
+                              ),
+                              confirmDismiss: (_) => _deleteTask(context, taskProvider, task.id!),
+                              child: TaskCard(
+                                task: task,
+                                isBusy: isBusy,
+                                onToggle: () => _toggleTask(context, taskProvider, task),
+                              ),
+                            );
+                          }).toList(),
                         ),
                       );
-                    }).toList(),
+                    },
                   ),
-                );
-              },
-            ),
           ),
         ],
       ),
-
-      floatingActionButton:
-      PopupMenuButton<String>(
+      floatingActionButton: PopupMenuButton<String>(
         icon: const Icon(
           Icons.add_circle,
           size: 60,
@@ -114,7 +119,7 @@ class _HomeScreenState extends State<HomeScreen> {
           final taskProvider = context.read<TaskProvider>();
           final taskListProvider = context.read<TaskListProvider>();
 
-          if (value == "task") {
+          if (value == 'task') {
             await navigator.push(
               MaterialPageRoute(
                 builder: (_) => const AddTaskScreen(),
@@ -122,10 +127,15 @@ class _HomeScreenState extends State<HomeScreen> {
             );
 
             if (!mounted) return;
-            await taskProvider.loadTasks();
+            try {
+              await taskProvider.loadTasks();
+            } catch (error) {
+              if (!context.mounted) return;
+              showErrorSnackBar(context, error);
+            }
           }
 
-          if (value == "list") {
+          if (value == 'list') {
             await navigator.push(
               MaterialPageRoute(
                 builder: (_) => const AddListScreen(),
@@ -133,21 +143,22 @@ class _HomeScreenState extends State<HomeScreen> {
             );
 
             if (!mounted) return;
-            await taskListProvider.loadLists();
+            try {
+              await taskListProvider.loadLists();
+            } catch (error) {
+              if (!context.mounted) return;
+              showErrorSnackBar(context, error);
+            }
           }
         },
         itemBuilder: (context) => [
           const PopupMenuItem(
-            value: "task",
-            child: Text(
-              "➕ Thêm lời nhắc",
-            ),
+            value: 'task',
+            child: Text('➕ Thêm lời nhắc'),
           ),
           const PopupMenuItem(
-            value: "list",
-            child: Text(
-              "📁 Thêm danh mục",
-            ),
+            value: 'list',
+            child: Text('📁 Thêm danh mục'),
           ),
         ],
       ),
@@ -156,29 +167,26 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildFilter(TaskProvider provider) {
     return Padding(
-      padding: const EdgeInsets.symmetric(
-        horizontal: 12,
-        vertical: 8,
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       child: DropdownButton<String>(
         isExpanded: true,
         value: provider.currentFilter,
         items: const [
           DropdownMenuItem(
-            value: "Tất cả",
-            child: Text("Tất cả"),
+            value: 'Tất cả',
+            child: Text('Tất cả'),
           ),
           DropdownMenuItem(
-            value: "Thấp",
-            child: Text("Thấp"),
+            value: 'Thấp',
+            child: Text('Thấp'),
           ),
           DropdownMenuItem(
-            value: "Trung Bình",
-            child: Text("Trung Bình"),
+            value: 'Trung Bình',
+            child: Text('Trung Bình'),
           ),
           DropdownMenuItem(
-            value: "Cao",
-            child: Text("Cao"),
+            value: 'Cao',
+            child: Text('Cao'),
           ),
         ],
         onChanged: (value) {
