@@ -1,8 +1,6 @@
 import 'package:flutter/foundation.dart';
 
 class AppConstants {
-  static const String databaseName = 'task_manager.db';
-
   static const List<String> priorityLabels = [
     'Thấp',
     'Trung Bình',

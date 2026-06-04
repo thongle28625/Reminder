@@ -29,21 +29,6 @@ class TaskModel {
 
   String get priorityLabel => AppConstants.priorityLabel(priority);
 
-  Map<String, dynamic> toLocalMap() {
-    return {
-      'id': id,
-      'title': title,
-      'description': description,
-      'dueDate': dueDate.toIso8601String(),
-      'reminderTime': reminderTime?.toIso8601String(),
-      'priority': priority,
-      'isCompleted': isCompleted ? 1 : 0,
-      'listId': listId,
-      'createdAt': createdAt?.toIso8601String(),
-      'updatedAt': updatedAt?.toIso8601String(),
-    };
-  }
-
   Map<String, dynamic> toApiMap() {
     return {
       'taskListId': listId,
@@ -54,28 +39,6 @@ class TaskModel {
       'priority': priority,
       'isCompleted': isCompleted,
     };
-  }
-
-  factory TaskModel.fromLocalMap(Map<String, dynamic> map) {
-    return TaskModel(
-      id: map['id'] as int?,
-      title: map['title']?.toString() ?? '',
-      description: map['description']?.toString() ?? '',
-      dueDate: DateTime.parse(map['dueDate'].toString()),
-      reminderTime: map['reminderTime'] != null
-          ? DateTime.tryParse(map['reminderTime'].toString())
-          : null,
-      priority: _parsePriority(map['priority']),
-      isCompleted: map['isCompleted'] == 1 || map['isCompleted'] == true,
-      listId: (map['listId'] ?? map['taskListId'] ?? 1) as int,
-      listName: map['listName']?.toString(),
-      createdAt: map['createdAt'] != null
-          ? DateTime.tryParse(map['createdAt'].toString())
-          : null,
-      updatedAt: map['updatedAt'] != null
-          ? DateTime.tryParse(map['updatedAt'].toString())
-          : null,
-    );
   }
 
   factory TaskModel.fromApiJson(Map<String, dynamic> map) {

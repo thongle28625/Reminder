@@ -60,6 +60,8 @@ public class TasksController : ControllerBase
             .Where(x => x.TaskListId == taskListId)
             .OrderBy(x => x.IsCompleted)
             .ThenBy(x => x.DueDate)
+            .ThenBy(x => x.CreatedAt)
+            .ThenBy(x => x.Id)
             .Select(x => ToTaskResponse(x))
             .ToList();
 

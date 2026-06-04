@@ -2,12 +2,8 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Reminder.Api.Entities;
 
-public partial class ReminderDbContext : DbContext
+public class ReminderDbContext : DbContext
 {
-    public ReminderDbContext()
-    {
-    }
-
     public ReminderDbContext(DbContextOptions<ReminderDbContext> options)
         : base(options)
     {
@@ -68,9 +64,5 @@ public partial class ReminderDbContext : DbContext
                 .OnDelete(DeleteBehavior.Cascade)
                 .HasConstraintName("FK_Tasks_TaskLists");
         });
-
-        OnModelCreatingPartial(modelBuilder);
     }
-
-    partial void OnModelCreatingPartial(ModelBuilder modelBuilder);
 }

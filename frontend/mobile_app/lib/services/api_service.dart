@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:http/http.dart' as http;
 
@@ -10,33 +11,57 @@ class ApiService {
   final http.Client _client;
 
   Future<dynamic> getJson(String path) async {
-    final response = await _client.get(_uri(path), headers: _headers);
-    return _decodeResponse(response);
+    try {
+      final response = await _client.get(_uri(path), headers: _headers);
+      return _decodeResponse(response);
+    } on SocketException {
+      throw Exception('Không thể kết nối tới máy chủ. Hãy kiểm tra backend và mạng.');
+    } on http.ClientException {
+      throw Exception('Yêu cầu tới máy chủ thất bại. Hãy thử lại.');
+    }
   }
 
   Future<dynamic> postJson(String path, Map<String, dynamic> body) async {
-    final response = await _client.post(
-      _uri(path),
-      headers: _headers,
-      body: jsonEncode(body),
-    );
+    try {
+      final response = await _client.post(
+        _uri(path),
+        headers: _headers,
+        body: jsonEncode(body),
+      );
 
-    return _decodeResponse(response);
+      return _decodeResponse(response);
+    } on SocketException {
+      throw Exception('Không thể kết nối tới máy chủ. Hãy kiểm tra backend và mạng.');
+    } on http.ClientException {
+      throw Exception('Yêu cầu tới máy chủ thất bại. Hãy thử lại.');
+    }
   }
 
   Future<dynamic> putJson(String path, Map<String, dynamic> body) async {
-    final response = await _client.put(
-      _uri(path),
-      headers: _headers,
-      body: jsonEncode(body),
-    );
+    try {
+      final response = await _client.put(
+        _uri(path),
+        headers: _headers,
+        body: jsonEncode(body),
+      );
 
-    return _decodeResponse(response);
+      return _decodeResponse(response);
+    } on SocketException {
+      throw Exception('Không thể kết nối tới máy chủ. Hãy kiểm tra backend và mạng.');
+    } on http.ClientException {
+      throw Exception('Yêu cầu tới máy chủ thất bại. Hãy thử lại.');
+    }
   }
 
   Future<dynamic> deleteJson(String path) async {
-    final response = await _client.delete(_uri(path), headers: _headers);
-    return _decodeResponse(response);
+    try {
+      final response = await _client.delete(_uri(path), headers: _headers);
+      return _decodeResponse(response);
+    } on SocketException {
+      throw Exception('Không thể kết nối tới máy chủ. Hãy kiểm tra backend và mạng.');
+    } on http.ClientException {
+      throw Exception('Yêu cầu tới máy chủ thất bại. Hãy thử lại.');
+    }
   }
 
   Uri _uri(String path) {

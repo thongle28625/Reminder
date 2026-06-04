@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../core/utils/error_utils.dart';
 import '../models/task_model.dart';
 import '../providers/task_provider.dart';
 import '../widgets/task_card.dart';
@@ -14,6 +15,18 @@ class TaskListView extends StatelessWidget {
     required this.title,
     required this.filter,
   });
+
+  Future<void> _toggleTask(BuildContext context, TaskProvider provider, TaskModel task) async {
+    if (provider.isTaskBusy(task.id)) return;
+
+    try {
+      await provider.toggleComplete(task);
+    } catch (error) {
+      if (context.mounted) {
+        showErrorSnackBar(context, error);
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -57,9 +70,8 @@ class TaskListView extends StatelessWidget {
 
                 return TaskCard(
                   task: task,
-                  onTap: () async {
-                    await provider.toggleComplete(task);
-                  },
+                  isBusy: provider.isTaskBusy(task.id),
+                  onToggle: () => _toggleTask(context, provider, task),
                 );
               },
             ),

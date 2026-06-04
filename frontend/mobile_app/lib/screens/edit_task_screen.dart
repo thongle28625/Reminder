@@ -2,9 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../core/constants/app_constants.dart';
+import '../core/utils/error_utils.dart';
 import '../models/task_model.dart';
-import '../providers/task_provider.dart';
 import '../providers/task_list_provider.dart';
+import '../providers/task_provider.dart';
 
 class EditTaskScreen extends StatefulWidget {
   final TaskModel task;
@@ -24,6 +25,11 @@ class _EditTaskScreenState extends State<EditTaskScreen> {
   late DateTime selectedDateTime;
   late int priority;
   late int selectedListId;
+  bool _isSaving = false;
+  bool _isDeleting = false;
+  bool _isLoadingLists = false;
+
+  bool get _isBusy => _isSaving || _isDeleting;
 
   @override
   void initState() {
@@ -37,11 +43,29 @@ class _EditTaskScreenState extends State<EditTaskScreen> {
 
     Future.microtask(() async {
       if (!mounted) return;
-      await context.read<TaskListProvider>().loadLists();
+
+      setState(() {
+        _isLoadingLists = true;
+      });
+
+      try {
+        await context.read<TaskListProvider>().loadLists();
+      } catch (error) {
+        if (!mounted) return;
+        showErrorSnackBar(context, error);
+      } finally {
+        if (mounted) {
+          setState(() {
+            _isLoadingLists = false;
+          });
+        }
+      }
     });
   }
 
   Future<void> pickDateTime() async {
+    if (_isBusy) return;
+
     final date = await showDatePicker(
       context: context,
       initialDate: selectedDateTime,
@@ -71,6 +95,8 @@ class _EditTaskScreenState extends State<EditTaskScreen> {
   }
 
   Future<void> updateTask() async {
+    if (_isBusy) return;
+
     if (titleController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Vui lòng nhập tên công việc')),
@@ -87,14 +113,42 @@ class _EditTaskScreenState extends State<EditTaskScreen> {
       listId: selectedListId,
     );
 
-    await context.read<TaskProvider>().updateTask(updated);
+    setState(() {
+      _isSaving = true;
+    });
+
+    try {
+      await context.read<TaskProvider>().updateTask(updated);
+    } catch (error) {
+      if (!mounted) return;
+      showErrorSnackBar(context, error);
+      setState(() {
+        _isSaving = false;
+      });
+      return;
+    }
 
     if (!mounted) return;
     Navigator.pop(context);
   }
 
   Future<void> deleteTask() async {
-    await context.read<TaskProvider>().deleteTask(widget.task.id!);
+    if (_isBusy) return;
+
+    setState(() {
+      _isDeleting = true;
+    });
+
+    try {
+      await context.read<TaskProvider>().deleteTask(widget.task.id!);
+    } catch (error) {
+      if (!mounted) return;
+      showErrorSnackBar(context, error);
+      setState(() {
+        _isDeleting = false;
+      });
+      return;
+    }
 
     if (!mounted) return;
     Navigator.pop(context);
@@ -109,8 +163,14 @@ class _EditTaskScreenState extends State<EditTaskScreen> {
         title: const Text('Sửa công việc'),
         actions: [
           IconButton(
-            icon: const Icon(Icons.delete),
-            onPressed: deleteTask,
+            icon: _isDeleting
+                ? const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(Icons.delete),
+            onPressed: _isBusy ? null : deleteTask,
           ),
         ],
       ),
@@ -120,6 +180,7 @@ class _EditTaskScreenState extends State<EditTaskScreen> {
           children: [
             TextField(
               controller: titleController,
+              enabled: !_isBusy,
               decoration: const InputDecoration(
                 labelText: 'Tên công việc',
                 border: OutlineInputBorder(),
@@ -128,6 +189,7 @@ class _EditTaskScreenState extends State<EditTaskScreen> {
             const SizedBox(height: 15),
             TextField(
               controller: descriptionController,
+              enabled: !_isBusy,
               maxLines: 3,
               decoration: const InputDecoration(
                 labelText: 'Mô tả',
@@ -148,18 +210,30 @@ class _EditTaskScreenState extends State<EditTaskScreen> {
                   child: Text(AppConstants.priorityLabels[index]),
                 ),
               ),
-              onChanged: (value) {
-                setState(() {
-                  priority = value ?? 0;
-                });
-              },
+              onChanged: _isBusy
+                  ? null
+                  : (value) {
+                      setState(() {
+                        priority = value ?? 0;
+                      });
+                    },
             ),
             const SizedBox(height: 15),
             DropdownButtonFormField<int>(
               initialValue: selectedListId,
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 labelText: 'Danh mục',
-                border: OutlineInputBorder(),
+                border: const OutlineInputBorder(),
+                suffixIcon: _isLoadingLists
+                    ? const Padding(
+                        padding: EdgeInsets.all(12),
+                        child: SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        ),
+                      )
+                    : null,
               ),
               items: listProvider.lists
                   .map(
@@ -169,11 +243,13 @@ class _EditTaskScreenState extends State<EditTaskScreen> {
                     ),
                   )
                   .toList(),
-              onChanged: (value) {
-                setState(() {
-                  selectedListId = value ?? selectedListId;
-                });
-              },
+              onChanged: _isBusy || _isLoadingLists
+                  ? null
+                  : (value) {
+                      setState(() {
+                        selectedListId = value ?? selectedListId;
+                      });
+                    },
             ),
             const SizedBox(height: 15),
             Card(
@@ -183,7 +259,7 @@ class _EditTaskScreenState extends State<EditTaskScreen> {
                 subtitle: Text(selectedDateTime.toString()),
                 trailing: IconButton(
                   icon: const Icon(Icons.edit),
-                  onPressed: pickDateTime,
+                  onPressed: _isBusy ? null : pickDateTime,
                 ),
               ),
             ),
@@ -192,8 +268,14 @@ class _EditTaskScreenState extends State<EditTaskScreen> {
               width: double.infinity,
               height: 50,
               child: FilledButton(
-                onPressed: updateTask,
-                child: const Text('Cập nhật'),
+                onPressed: _isBusy ? null : updateTask,
+                child: _isSaving
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Text('Cập nhật'),
               ),
             ),
           ],

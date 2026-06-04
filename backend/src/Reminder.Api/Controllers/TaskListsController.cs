@@ -42,6 +42,8 @@ public class TaskListsController : ControllerBase
                 tasks = x.Tasks
                     .OrderBy(t => t.IsCompleted)
                     .ThenBy(t => t.DueDate)
+                    .ThenBy(t => t.CreatedAt)
+                    .ThenBy(t => t.Id)
                     .Select(t => new
                     {
                         id = t.Id,
