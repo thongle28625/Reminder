@@ -16,6 +16,19 @@ public class TasksController : ControllerBase
         _context = context;
     }
 
+    [HttpGet("user/{userId}")]
+    public IActionResult GetByUser(int userId)
+    {
+        var tasks = _context.Tasks
+            .Include(x => x.TaskList)
+            .Where(x => x.TaskList.UserId == userId)
+            .OrderByDescending(x => x.CreatedAt)
+            .Select(x => ToTaskResponse(x))
+            .ToList();
+
+        return Ok(tasks);
+    }
+
     [HttpGet]
     public IActionResult GetAll()
     {

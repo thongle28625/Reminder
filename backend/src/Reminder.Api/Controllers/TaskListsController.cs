@@ -16,6 +16,18 @@ public class TaskListsController : ControllerBase
         _context = context;
     }
 
+    [HttpGet("user/{userId}")]
+    public IActionResult GetByUser(int userId)
+    {
+        var taskLists = _context.TaskLists
+            .Where(x => x.UserId == userId)
+            .OrderBy(x => x.Id)
+            .Select(x => ToTaskListResponse(x))
+            .ToList();
+
+        return Ok(taskLists);
+    }
+
     [HttpGet]
     public IActionResult GetAll()
     {
@@ -74,6 +86,7 @@ public class TaskListsController : ControllerBase
     [HttpPost]
     public IActionResult Create([FromBody] TaskListModel model)
     {
+
         if (!ModelState.IsValid)
         {
             return ValidationProblem(ModelState);
@@ -85,6 +98,7 @@ public class TaskListsController : ControllerBase
             {
                 Name = model.Name,
                 Description = model.Description,
+                UserId = model.UserId,
             };
 
             _context.TaskLists.Add(taskList);
@@ -169,6 +183,7 @@ public class TaskListsController : ControllerBase
         return new
         {
             id = taskList.Id,
+            userId = taskList.UserId,
             name = taskList.Name,
             description = taskList.Description,
             createdAt = taskList.CreatedAt,

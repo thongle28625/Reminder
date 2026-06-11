@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../providers/task_provider.dart';
 import '../services/pdf_service.dart';
 import 'task_list_view.dart';
+import 'login_screen.dart';
 
 class DashboardScreen extends StatelessWidget {
   const DashboardScreen({super.key});
@@ -21,73 +22,87 @@ class DashboardScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Dashboard'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.logout),
+            onPressed: () {
+              Navigator.pushAndRemoveUntil(
+                context,
+                MaterialPageRoute(builder: (_) => const LoginScreen()),
+                (route) => false,
+              );
+            },
+          ),
+        ],
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            GridView.count(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              crossAxisCount: 2,
-              crossAxisSpacing: 12,
-              mainAxisSpacing: 12,
-              childAspectRatio: 1.6,
-              children: [
-                _buildCard(
-                  context,
-                  title: 'Tổng',
-                  count: total,
-                  color: Colors.blue.shade50,
-                  filter: 'Tổng',
-                ),
-                _buildCard(
-                  context,
-                  title: 'Hoàn thành',
-                  count: completed,
-                  color: Colors.green.shade50,
-                  filter: 'Hoàn thành',
-                ),
-                _buildCard(
-                  context,
-                  title: 'Hôm nay',
-                  count: today,
-                  color: Colors.orange.shade50,
-                  filter: 'Hôm nay',
-                ),
-                _buildCard(
-                  context,
-                  title: 'Quá hạn',
-                  count: overdue,
-                  color: Colors.red.shade50,
-                  filter: 'Quá hạn',
-                ),
-              ],
-            ),
-            const SizedBox(height: 24),
-            Text(
-              'Đã hoàn thành $completed/$total công việc • Còn lại $pending',
-              style: Theme.of(context).textTheme.bodyMedium,
-            ),
-            const SizedBox(height: 12),
-            LinearProgressIndicator(
-              value: provider.progress,
-              minHeight: 10,
-              borderRadius: BorderRadius.circular(10),
-            ),
-            const SizedBox(height: 20),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                icon: const Icon(Icons.picture_as_pdf),
-                label: const Text('Xuất báo cáo PDF'),
-                onPressed: () async {
-                  await PdfService.exportTasks(provider.tasks);
-                },
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              GridView.count(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                crossAxisCount: 2,
+                crossAxisSpacing: 12,
+                mainAxisSpacing: 12,
+                childAspectRatio: 1.6,
+                children: [
+                  _buildCard(
+                    context,
+                    title: 'Tổng',
+                    count: total,
+                    color: Colors.blue.shade50,
+                    filter: 'Tổng',
+                  ),
+                  _buildCard(
+                    context,
+                    title: 'Hoàn thành',
+                    count: completed,
+                    color: Colors.green.shade50,
+                    filter: 'Hoàn thành',
+                  ),
+                  _buildCard(
+                    context,
+                    title: 'Hôm nay',
+                    count: today,
+                    color: Colors.orange.shade50,
+                    filter: 'Hôm nay',
+                  ),
+                  _buildCard(
+                    context,
+                    title: 'Quá hạn',
+                    count: overdue,
+                    color: Colors.red.shade50,
+                    filter: 'Quá hạn',
+                  ),
+                ],
               ),
-            ),
-          ],
+              const SizedBox(height: 24),
+              Text(
+                'Đã hoàn thành $completed/$total công việc • Còn lại $pending',
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
+              const SizedBox(height: 12),
+              LinearProgressIndicator(
+                value: provider.progress,
+                minHeight: 10,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              const SizedBox(height: 20),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  icon: const Icon(Icons.picture_as_pdf),
+                  label: const Text('Xuất báo cáo PDF'),
+                  onPressed: () async {
+                    await PdfService.exportTasks(provider.tasks);
+                  },
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -106,10 +121,7 @@ class DashboardScreen extends StatelessWidget {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (_) => TaskListView(
-              title: title,
-              filter: filter,
-            ),
+            builder: (_) => TaskListView(title: title, filter: filter),
           ),
         );
       },
@@ -125,17 +137,11 @@ class DashboardScreen extends StatelessWidget {
           children: [
             Text(
               title,
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 16,
-              ),
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
             ),
             Text(
               count.toString(),
-              style: const TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
-              ),
+              style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
             ),
           ],
         ),

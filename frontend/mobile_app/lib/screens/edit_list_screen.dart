@@ -38,6 +38,8 @@ class _EditListScreenState extends State<EditListScreen> {
     }
 
     final updated = widget.list.copyWith(name: controller.text.trim());
+    print('USER ID = ${updated.userId}');
+print(updated.toApiMap());
 
     setState(() {
       _isSaving = true;

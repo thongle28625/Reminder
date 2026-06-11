@@ -14,7 +14,7 @@ class AppConstants {
 
     switch (defaultTargetPlatform) {
       case TargetPlatform.android:
-        return 'http://10.0.2.2:5253';
+        return 'http://10.182.123.201:5253';
       default:
         return 'http://localhost:5253';
     }

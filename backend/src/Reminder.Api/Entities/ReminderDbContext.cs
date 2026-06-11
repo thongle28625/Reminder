@@ -9,9 +9,12 @@ public class ReminderDbContext : DbContext
     {
     }
 
+
     public virtual DbSet<TaskList> TaskLists { get; set; }
 
     public virtual DbSet<TaskItem> Tasks { get; set; }
+
+    public virtual DbSet<User> Users { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -30,6 +33,32 @@ public class ReminderDbContext : DbContext
 
             entity.Property(e => e.CreatedAt)
                 .HasDefaultValueSql("SYSUTCDATETIME()");
+            entity.HasOne(d => d.User)
+                .WithMany()
+                .HasForeignKey(d => d.UserId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("FK_TaskLists_Users");
+        });
+
+
+
+        modelBuilder.Entity<User>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+
+            entity.ToTable("Users");
+
+            entity.Property(e => e.Username)
+                .HasMaxLength(50)
+                .IsRequired();
+
+            entity.Property(e => e.Password)
+                .HasMaxLength(100)
+                .IsRequired();
+
+            entity.Property(e => e.FullName)
+                .HasMaxLength(100)
+                .IsRequired();
         });
 
         modelBuilder.Entity<TaskItem>(entity =>
