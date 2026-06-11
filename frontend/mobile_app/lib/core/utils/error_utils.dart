@@ -10,10 +10,22 @@ String describeError(Object error) {
   return raw;
 }
 
-void showErrorSnackBar(BuildContext context, Object error) {
+String contextualizeError(String contextLabel, Object error) {
+  return '$contextLabel\n${describeError(error)}';
+}
+
+void showErrorSnackBar(
+  BuildContext context,
+  Object error, {
+  String? contextLabel,
+}) {
+  final message = contextLabel == null
+      ? describeError(error)
+      : contextualizeError(contextLabel, error);
+
   ScaffoldMessenger.of(context).showSnackBar(
     SnackBar(
-      content: Text(describeError(error)),
+      content: Text(message),
       backgroundColor: Colors.red,
     ),
   );

@@ -1,8 +1,8 @@
 # API Contracts
 
 Base URL dev mặc định:
-- Android emulator: `http://10.0.2.2:5253`
-- Desktop / iOS simulator: `http://localhost:5253`
+- Android emulator: `http://10.0.2.2:5453`
+- Desktop / iOS simulator: `http://localhost:5453`
 
 ## 1. TaskLists
 

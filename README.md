@@ -66,23 +66,23 @@ Base URL hiện nằm ở:
 - `frontend/mobile_app/lib/services/api_config.dart`
 
 Mặc định:
-- Web: `http://localhost:5253`
-- Android emulator: `http://10.0.2.2:5253`
-- Platform khác: `http://localhost:5253`
+- Web: `http://localhost:5453`
+- Android emulator: `http://10.0.2.2:5453`
+- Platform khác: `http://localhost:5453`
 
 Nếu chạy trên điện thoại thật, đổi sang IP LAN của máy đang chạy backend.
 
 ## Backend API
 Khi chạy local bằng `dotnet run`, backend mặc định phục vụ API tại:
-- `http://localhost:5253`
+- `http://localhost:5453`
 
 Các endpoint chính:
-- `GET http://localhost:5253/api/health`
-- `GET http://localhost:5253/api/tasklists`
-- `GET http://localhost:5253/api/tasks`
+- `GET http://localhost:5453/api/health`
+- `GET http://localhost:5453/api/tasklists`
+- `GET http://localhost:5453/api/tasks`
 
 Nếu Flutter chạy trên Android emulator, app sẽ gọi backend qua:
-- `http://10.0.2.2:5253`
+- `http://10.0.2.2:5453`
 
 Nếu Flutter chạy trên điện thoại thật, đổi base URL sang:
-- `http://<IP-LAN-cua-may-chay-backend>:5253`
+- `http://<IP-LAN-cua-may-chay-backend>:5453`

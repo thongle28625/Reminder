@@ -17,6 +17,24 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  late Future<void> _loadDataFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadDataFuture = _loadData();
+  }
+
+  Future<void> _loadData() {
+    final taskProvider = context.read<TaskProvider>();
+    final listProvider = context.read<TaskListProvider>();
+
+    return Future.wait([
+      taskProvider.loadTasks(),
+      listProvider.loadLists(),
+    ]);
+  }
+
   Future<bool> _deleteTask(BuildContext context, TaskProvider provider, int id) async {
     if (provider.isTaskBusy(id)) return false;
 
@@ -25,7 +43,7 @@ class _HomeScreenState extends State<HomeScreen> {
       return true;
     } catch (error) {
       if (!context.mounted) return false;
-      showErrorSnackBar(context, error);
+      showErrorSnackBar(context, error, contextLabel: 'Không xóa được công việc.');
       return false;
     }
   }
@@ -37,7 +55,7 @@ class _HomeScreenState extends State<HomeScreen> {
       await provider.toggleComplete(task);
     } catch (error) {
       if (!context.mounted) return;
-      showErrorSnackBar(context, error);
+      showErrorSnackBar(context, error, contextLabel: 'Không cập nhật được trạng thái công việc.');
     }
   }
 
@@ -50,64 +68,80 @@ class _HomeScreenState extends State<HomeScreen> {
       appBar: AppBar(
         title: const Text('Danh sách nhắc nhở'),
       ),
-      body: Column(
-        children: [
-          _buildFilter(taskProvider),
-          Expanded(
-            child: taskProvider.filteredTasks.isEmpty
-                ? const Center(
-                    child: Text('Chưa có công việc'),
-                  )
-                : ListView.builder(
-                    itemCount: listProvider.lists.length,
-                    itemBuilder: (context, listIndex) {
-                      final TaskListModel list = listProvider.lists[listIndex];
+      body: FutureBuilder<void>(
+        future: _loadDataFuture,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
 
-                      final tasksInList = taskProvider.filteredTasks
-                          .where((task) => task.listId == list.id)
-                          .toList();
+          if (snapshot.hasError) {
+            return _buildErrorState(snapshot.error!);
+          }
 
-                      if (tasksInList.isEmpty) {
-                        return const SizedBox.shrink();
-                      }
+          return Column(
+            children: [
+              _buildFilter(taskProvider),
+              Expanded(
+                child: taskProvider.filteredTasks.isEmpty
+                    ? const Center(
+                        child: Text('Chưa có công việc'),
+                      )
+                    : ListView.builder(
+                        itemCount: listProvider.lists.length,
+                        itemBuilder: (context, listIndex) {
+                          final TaskListModel list = listProvider.lists[listIndex];
 
-                      return Card(
-                        margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                        child: ExpansionTile(
-                          initiallyExpanded: true,
-                          title: Text(
-                            '${list.name} (${tasksInList.length})',
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
+                          final tasksInList = taskProvider.filteredTasks
+                              .where((task) => task.listId == list.id)
+                              .toList();
+
+                          if (tasksInList.isEmpty) {
+                            return const SizedBox.shrink();
+                          }
+
+                          return Card(
+                            margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                            child: ExpansionTile(
+                              initiallyExpanded: true,
+                              title: Text(
+                                '${list.name} (${tasksInList.length})',
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                ),
+                              ),
+                              children: tasksInList.map((task) {
+                                final isBusy = taskProvider.isTaskBusy(task.id);
+
+                                return Dismissible(
+                                  key: Key(task.id.toString()),
+                                  direction: isBusy
+                                      ? DismissDirection.none
+                                      : DismissDirection.endToStart,
+                                  background: Container(
+                                    color: Colors.red,
+                                    alignment: Alignment.centerRight,
+                                    padding: const EdgeInsets.only(right: 20),
+                                    child: const Icon(Icons.delete, color: Colors.white),
+                                  ),
+                                  confirmDismiss: (_) =>
+                                      _deleteTask(context, taskProvider, task.id!),
+                                  child: TaskCard(
+                                    task: task,
+                                    isBusy: isBusy,
+                                    onToggle: () => _toggleTask(context, taskProvider, task),
+                                  ),
+                                );
+                              }).toList(),
                             ),
-                          ),
-                          children: tasksInList.map((task) {
-                            final isBusy = taskProvider.isTaskBusy(task.id);
-
-                            return Dismissible(
-                              key: Key(task.id.toString()),
-                              direction: isBusy ? DismissDirection.none : DismissDirection.endToStart,
-                              background: Container(
-                                color: Colors.red,
-                                alignment: Alignment.centerRight,
-                                padding: const EdgeInsets.only(right: 20),
-                                child: const Icon(Icons.delete, color: Colors.white),
-                              ),
-                              confirmDismiss: (_) => _deleteTask(context, taskProvider, task.id!),
-                              child: TaskCard(
-                                task: task,
-                                isBusy: isBusy,
-                                onToggle: () => _toggleTask(context, taskProvider, task),
-                              ),
-                            );
-                          }).toList(),
-                        ),
-                      );
-                    },
-                  ),
-          ),
-        ],
+                          );
+                        },
+                      ),
+              ),
+            ],
+          );
+        },
       ),
       floatingActionButton: PopupMenuButton<String>(
         icon: const Icon(
@@ -131,7 +165,7 @@ class _HomeScreenState extends State<HomeScreen> {
               await taskProvider.loadTasks();
             } catch (error) {
               if (!context.mounted) return;
-              showErrorSnackBar(context, error);
+              showErrorSnackBar(context, error, contextLabel: 'Không tải lại được danh sách công việc.');
             }
           }
 
@@ -147,7 +181,7 @@ class _HomeScreenState extends State<HomeScreen> {
               await taskListProvider.loadLists();
             } catch (error) {
               if (!context.mounted) return;
-              showErrorSnackBar(context, error);
+              showErrorSnackBar(context, error, contextLabel: 'Không tải lại được danh mục.');
             }
           }
         },
@@ -192,6 +226,32 @@ class _HomeScreenState extends State<HomeScreen> {
         onChanged: (value) {
           provider.setFilter(value!);
         },
+      ),
+    );
+  }
+
+  Widget _buildErrorState(Object error) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              contextualizeError('Không tải được danh sách nhắc nhở.', error),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 12),
+            ElevatedButton(
+              onPressed: () {
+                setState(() {
+                  _loadDataFuture = _loadData();
+                });
+              },
+              child: const Text('Thử lại'),
+            ),
+          ],
+        ),
       ),
     );
   }

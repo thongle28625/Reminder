@@ -34,8 +34,6 @@ class _AddListScreenState extends State<AddListScreen> {
     });
 
     try {
-      print(Session.currentUserId);
-      print(Session.currentUserId.runtimeType);
       await context.read<TaskListProvider>().addList(
         TaskListModel(name: name, userId: Session.currentUserId),
       );
