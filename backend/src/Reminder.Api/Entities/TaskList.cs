@@ -2,6 +2,10 @@ namespace Reminder.Api.Entities;
 
 public partial class TaskList
 {
+    public int UserId { get; set; }
+
+    public virtual User User { get; set; } = null!;
+
     public int Id { get; set; }
 
     public string Name { get; set; } = string.Empty;

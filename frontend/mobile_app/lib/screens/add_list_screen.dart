@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../core/utils/error_utils.dart';
 import '../models/task_list_model.dart';
 import '../providers/task_list_provider.dart';
+import '../core/session.dart';
 
 class AddListScreen extends StatefulWidget {
   const AddListScreen({super.key});
@@ -22,9 +23,9 @@ class _AddListScreenState extends State<AddListScreen> {
     final name = controller.text.trim();
 
     if (name.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Nhập tên danh mục')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Nhập tên danh mục')));
       return;
     }
 
@@ -33,9 +34,11 @@ class _AddListScreenState extends State<AddListScreen> {
     });
 
     try {
+      print(Session.currentUserId);
+      print(Session.currentUserId.runtimeType);
       await context.read<TaskListProvider>().addList(
-            TaskListModel(name: name),
-          );
+        TaskListModel(name: name, userId: Session.currentUserId),
+      );
     } catch (error) {
       if (!mounted) return;
       showErrorSnackBar(context, error);
@@ -52,9 +55,7 @@ class _AddListScreenState extends State<AddListScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Thêm danh mục'),
-      ),
+      appBar: AppBar(title: const Text('Thêm danh mục')),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(

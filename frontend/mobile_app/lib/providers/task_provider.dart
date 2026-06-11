@@ -6,7 +6,7 @@ import '../services/task_api_service.dart';
 
 class TaskProvider extends ChangeNotifier {
   TaskProvider({TaskApiService? apiService})
-      : _apiService = apiService ?? TaskApiService();
+    : _apiService = apiService ?? TaskApiService();
 
   final TaskApiService _apiService;
   List<TaskModel> _tasks = [];
@@ -83,12 +83,16 @@ class TaskProvider extends ChangeNotifier {
     final storedTask = await _apiService.createTask(task);
 
     if (storedTask.id != null) {
-      await NotificationService.instance.scheduleNotification(
-        id: storedTask.id!,
-        title: storedTask.title,
-        body: storedTask.description,
-        scheduleDate: storedTask.reminderTime ?? storedTask.dueDate,
-      );
+      if (storedTask.isCompleted) {
+        await NotificationService.instance.cancelNotification(storedTask.id!);
+      } else {
+        await NotificationService.instance.updateNotification(
+          id: storedTask.id!,
+          title: storedTask.title,
+          body: storedTask.description,
+          scheduleDate: storedTask.reminderTime ?? storedTask.dueDate,
+        );
+      }
     }
 
     _upsertTaskInMemory(storedTask);
@@ -100,12 +104,16 @@ class TaskProvider extends ChangeNotifier {
       final storedTask = await _apiService.updateTask(task);
 
       if (storedTask.id != null) {
-        await NotificationService.instance.updateNotification(
-          id: storedTask.id!,
-          title: storedTask.title,
-          body: storedTask.description,
-          scheduleDate: storedTask.reminderTime ?? storedTask.dueDate,
-        );
+        if (storedTask.isCompleted) {
+          await NotificationService.instance.cancelNotification(storedTask.id!);
+        } else {
+          await NotificationService.instance.updateNotification(
+            id: storedTask.id!,
+            title: storedTask.title,
+            body: storedTask.description,
+            scheduleDate: storedTask.reminderTime ?? storedTask.dueDate,
+          );
+        }
       }
 
       _upsertTaskInMemory(storedTask);

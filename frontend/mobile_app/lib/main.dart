@@ -5,8 +5,8 @@ import 'core/theme/app_theme.dart';
 import 'providers/task_list_provider.dart';
 import 'providers/task_provider.dart';
 import 'providers/theme_provider.dart';
-import 'screens/main_navigation.dart';
 import 'services/notification_service.dart';
+import 'screens/login_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -34,7 +34,7 @@ class MyApp extends StatelessWidget {
             theme: AppTheme.lightTheme(themeProvider.seedColor),
             darkTheme: AppTheme.darkTheme(themeProvider.seedColor),
             themeMode: themeProvider.isDark ? ThemeMode.dark : ThemeMode.light,
-            home: const MainNavigation(),
+            home: const LoginScreen(),
           );
         },
       ),

@@ -65,7 +65,58 @@ VALUES
     (4, N'Đưa em đi học', N'Có mặt trước giờ vào lớp 10 phút', DATEADD(DAY, 1, DATEADD(HOUR, 6, CAST(CAST(SYSUTCDATETIME() AS DATE) AS DATETIME2))), DATEADD(DAY, 1, DATEADD(HOUR, 5, CAST(CAST(SYSUTCDATETIME() AS DATE) AS DATETIME2))), 0, 1, SYSUTCDATETIME());
 GO
 
+CREATE TABLE Users
+(
+    Id INT IDENTITY(1,1) PRIMARY KEY,
+    Username NVARCHAR(50) NOT NULL UNIQUE,
+    Password NVARCHAR(100) NOT NULL,
+    FullName NVARCHAR(100)
+)
+GO
+
+INSERT INTO Users
+(
+    Username,
+    Password,
+    FullName
+)
+VALUES
+('admin','123456',N'Quản trị viên')
+
+-- chạy 1 lần rồi tắt để 4 danh mục mẫu ban đầu đều thành UserId = 1
+--GO
+--ALTER TABLE TaskLists
+--ADD UserId INT NOT NULL DEFAULT 1
+
+GO
+ALTER TABLE TaskLists
+ADD CONSTRAINT FK_TaskLists_Users
+FOREIGN KEY(UserId)
+REFERENCES Users(Id)
+
+
 -- Kiểm tra dữ liệu
+
+SELECT
+    t.Title,
+    tl.Name,
+    u.Username
+FROM Tasks t
+JOIN TaskLists tl ON t.TaskListId = tl.Id
+JOIN Users u ON tl.UserId = u.Id
+
+SELECT
+    Id,
+    Name,
+    UserId
+FROM TaskLists
+ORDER BY Id;
+
+SELECT *
+FROM TaskLists
+WHERE UserId = 1
+
 SELECT * FROM dbo.TaskLists;
 SELECT * FROM dbo.Tasks;
+SELECT * FROM dbo.Users;
 GO

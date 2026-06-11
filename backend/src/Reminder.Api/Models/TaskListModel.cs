@@ -10,4 +10,6 @@ public class TaskListModel
 
     [MaxLength(500)]
     public string? Description { get; set; }
+
+    public int UserId { get; set; }
 }

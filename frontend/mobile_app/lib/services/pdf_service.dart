@@ -6,42 +6,33 @@ import 'package:printing/printing.dart';
 import '../models/task_model.dart';
 
 class PdfService {
-  static Future<void> exportTasks(
-      List<TaskModel> tasks,
-      ) async {
+  static Future<void> exportTasks(List<TaskModel> tasks) async {
+    final font = await PdfGoogleFonts.notoSansRegular();
+
+    final fontBold = await PdfGoogleFonts.notoSansBold();
+
+    final theme = pw.ThemeData.withFont(base: font, bold: fontBold);
+
     final pdf = pw.Document();
 
     pdf.addPage(
       pw.MultiPage(
+        theme: theme,
         pageFormat: PdfPageFormat.a4,
         build: (context) {
           return [
-            pw.Header(
-              level: 0,
-              child: pw.Text(
-                'BÁO CÁO CÔNG VIỆC',
-              ),
-            ),
+            pw.Header(level: 0, child: pw.Text('BÁO CÁO CÔNG VIỆC')),
 
             pw.SizedBox(height: 20),
 
             pw.TableHelper.fromTextArray(
-              headers: const [
-                'Tên',
-                'Ưu tiên',
-                'Ngày',
-                'Trạng thái',
-              ],
+              headers: const ['Tên', 'Ưu tiên', 'Ngày', 'Trạng thái'],
               data: tasks.map((task) {
                 return [
                   task.title,
                   task.priorityLabel,
-                  DateFormat(
-                    'dd/MM/yyyy HH:mm',
-                  ).format(task.dueDate),
-                  task.isCompleted
-                      ? 'Hoàn thành'
-                      : 'Chưa hoàn thành',
+                  DateFormat('dd/MM/yyyy HH:mm').format(task.dueDate),
+                  task.isCompleted ? 'Hoàn thành' : 'Chưa hoàn thành',
                 ];
               }).toList(),
             ),
@@ -50,9 +41,6 @@ class PdfService {
       ),
     );
 
-    await Printing.layoutPdf(
-      onLayout: (format) async =>
-          pdf.save(),
-    );
+    await Printing.layoutPdf(onLayout: (format) async => pdf.save());
   }
 }
