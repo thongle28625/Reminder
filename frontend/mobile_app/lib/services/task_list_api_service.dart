@@ -12,8 +12,6 @@ class TaskListApiService {
   Future<List<TaskListModel>> fetchLists() async {
     final userId = Session.currentUserId;
 
-    print('FETCH LIST USER = $userId');
-
     final data =
         await _apiService.getJson('/api/tasklists/user/$userId')
             as List<dynamic>;
@@ -31,9 +29,6 @@ class TaskListApiService {
   }
 
   Future<TaskListModel> updateList(TaskListModel list) async {
-    print('UPDATE LIST');
-    print(list.toApiMap());
-
     final data =
         await _apiService.putJson('/api/tasklists/${list.id}', list.toApiMap())
             as Map<String, dynamic>;

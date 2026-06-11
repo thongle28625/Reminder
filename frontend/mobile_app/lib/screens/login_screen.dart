@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 
+import '../core/session.dart';
+import '../core/utils/error_utils.dart';
 import '../services/auth_api_service.dart';
 import 'main_navigation.dart';
 import 'register_screen.dart';
-import '../core/session.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -14,7 +15,6 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
-
   final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
 
@@ -31,31 +31,41 @@ class _LoginScreenState extends State<LoginScreen> {
 
     final authService = AuthApiService();
 
-    final user = await authService.login(
-      _usernameController.text.trim(),
-      _passwordController.text.trim(),
-    );
-
-    setState(() {
-      _isLoading = false;
-    });
-
-    if (!mounted) return;
-
-    if (user == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Sai tài khoản hoặc mật khẩu')),
+    try {
+      final user = await authService.login(
+        _usernameController.text.trim(),
+        _passwordController.text.trim(),
       );
-      return;
+
+      if (!mounted) return;
+
+      setState(() {
+        _isLoading = false;
+      });
+
+      Session.currentUserId = user.id;
+
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const MainNavigation()),
+      );
+    } catch (error) {
+      if (!mounted) return;
+
+      setState(() {
+        _isLoading = false;
+      });
+
+      final message = error.toString();
+      final isUnauthorized = message.contains('API 401') || message.contains('Sai tài khoản hoặc mật khẩu');
+      final displayMessage = isUnauthorized
+          ? 'Sai tài khoản hoặc mật khẩu'
+          : contextualizeError('Không đăng nhập được.', error);
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(displayMessage)),
+      );
     }
-    Session.currentUserId = user.id;
-
-    print('LOGIN USER ID = ${user.id}');
-
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (_) => const MainNavigation()),
-    );
   }
 
   @override
@@ -101,7 +111,6 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
               ),
               const SizedBox(height: 16),
-
               TextButton(
                 onPressed: () {
                   Navigator.push(

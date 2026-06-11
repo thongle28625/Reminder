@@ -12,8 +12,6 @@ class TaskApiService {
   Future<List<TaskModel>> fetchTasks() async {
     final userId = Session.currentUserId;
 
-    print('FETCH TASK USER = $userId');
-
     final data =
         await _apiService.getJson('/api/tasks/user/$userId') as List<dynamic>;
 

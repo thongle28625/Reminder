@@ -1,4 +1,4 @@
-@Reminder.Api_HostAddress = http://localhost:5253
+@Reminder.Api_HostAddress = http://localhost:5453
 
 ### Health check
 GET {{Reminder.Api_HostAddress}}/api/health

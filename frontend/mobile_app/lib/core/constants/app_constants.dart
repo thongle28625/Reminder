@@ -9,14 +9,14 @@ class AppConstants {
 
   static String get defaultApiBaseUrl {
     if (kIsWeb) {
-      return 'http://localhost:5253';
+      return 'http://localhost:5453';
     }
 
     switch (defaultTargetPlatform) {
       case TargetPlatform.android:
-        return 'http://10.182.123.201:5253';
+        return 'http://10.0.2.2:5453';
       default:
-        return 'http://localhost:5253';
+        return 'http://localhost:5453';
     }
   }
 
