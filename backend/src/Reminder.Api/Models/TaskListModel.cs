@@ -11,5 +11,6 @@ public class TaskListModel
     [MaxLength(500)]
     public string? Description { get; set; }
 
+    [Range(1, int.MaxValue)]
     public int UserId { get; set; }
 }

@@ -21,7 +21,7 @@ public class TasksController : ControllerBase
     {
         var tasks = _context.Tasks
             .Include(x => x.TaskList)
-            .Where(x => x.TaskList.UserId == userId)
+            .Where(x => x.TaskList != null && x.TaskList.UserId == userId)
             .OrderByDescending(x => x.CreatedAt)
             .Select(x => ToTaskResponse(x))
             .ToList();
